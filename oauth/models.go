@@ -12,7 +12,7 @@ type StravaOAuthResponse struct {
 	ExpiresAt    uint64                `json:"expires_at"`    // The number of seconds since the epoch when the provided access token will expire
 	ExpiresIn    int                   `json:"expires_in"`    // Seconds until the short-lived access token will expire
 	Athlete      strava.SummaryAthlete `json:"athlete"`       // A summary of the athlete information
-	Scopes 		 []string
+	Scopes       []string
 }
 
 type RefreshTokenResponse struct {
@@ -51,9 +51,11 @@ var Scopes = struct {
 }
 
 var endpoints = struct {
-	Auth string
-	Token string
+	Auth        string
+	Unauthorize string
+	Token       string
 }{
 	"https://www.strava.com/oauth/authorize",
+	"https://www.strava.com/oauth/deauthorize",
 	"https://www.strava.com/oauth/token",
 }

@@ -118,6 +118,29 @@ func (oauth *StravaOAuth) Refresh(refreshToken string) (*RefreshTokenResponse, e
 	return &response, nil
 }
 
+func (oauth *StravaOAuth) RevokeAccess(access_token string) error {
+
+	client := http.DefaultClient
+
+	if client != nil {
+		client = oauth.RequestClient
+	}
+
+	resp, err := client.PostForm(endpoints.Unauthorize, url.Values{
+		"access_token": { access_token },
+	})
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if err := strava.HandleBadResponse(resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (oauth *StravaOAuth) HandlerFunc(
 	handleSuccess func(tokens *StravaOAuthResponse, w http.ResponseWriter, r *http.Request),
 	handleError func(err error, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
@@ -141,6 +164,8 @@ func (oauth *StravaOAuth) HandlerFunc(
 		handleSuccess(tokens, w, r)
 	}
 }
+
+
 
 func (oauthResponse *StravaOAuthResponse) withScopes(scopes string)  {
 	oauthResponse.Scopes = strings.Split(scopes, ",")
