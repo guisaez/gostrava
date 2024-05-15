@@ -5,13 +5,14 @@ import (
 )
 
 // Token exchange result
-type StravaOAuthResp struct {
+type StravaOAuthResponse struct {
 	AccessToken  string                `json:"access_token"`
 	RefreshToken string                `json:"refresh_token"` // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work.
 	TokenType    string                `json:"token_type"`    // Bearer
 	ExpiresAt    uint64                `json:"expires_at"`    // The number of seconds since the epoch when the provided access token will expire
 	ExpiresIn    int                   `json:"expires_in"`    // Seconds until the short-lived access token will expire
 	Athlete      strava.SummaryAthlete `json:"athlete"`       // A summary of the athlete information
+	Scopes 		 []string
 }
 
 type RefreshTokenResponse struct {
@@ -50,7 +51,7 @@ var Scopes = struct {
 }
 
 var endpoints = struct {
-	Authurl string
+	Auth string
 	Token string
 }{
 	"https://www.strava.com/oauth/authorize",
