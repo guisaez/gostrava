@@ -26,7 +26,7 @@ type StravaOAuth struct {
 // various points in the app.
 // Force will always show the authorization prompt even if the user has already authorized the current
 // application
-func (oauth *StravaOAuth) AuthCodeURL(state string, force bool) string {
+func (oauth *StravaOAuth) AuthCodeURL(force bool, state string) string {
 
 	url := fmt.Sprintf(
 		"%s?response_type=code&client_id=%s&client_secret=%s&redirect_uri=%s&scope=%s&state=%s",
