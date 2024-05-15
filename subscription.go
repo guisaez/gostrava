@@ -3,7 +3,6 @@ package go_strava
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -22,7 +21,7 @@ type Subscription struct {
 	ID int64 `json:"id"`
 }
 
-func (ss *StravaSubscription) CreateSubscription(ctx context.Context) (*Subscription, error) {
+func (ss *StravaSubscription) CreateSubscription(ctx context.Context, callbackURL string, ) (*Subscription, error) {
 
 	apiUrl := baseURL + "/push_notifications"
 
@@ -69,7 +68,6 @@ func (ss *StravaSubscription) SubscriptionCallbackValidation(w http.ResponseWrit
 	if query_params.Get("hub.mode") != "subscribe" || query_params.Get("hub.verify_token") != ss.VerifyToken {
 		return 
 	}
-	
 	
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
