@@ -124,7 +124,8 @@ func (oauth *StravaOAuth) HandlerFunc(
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		if errParam := r.URL.Query().Get("error"); errParam == "access_denied" {
+		params := r.URL.Query()
+		if errParam := params.Get("error"); errParam == "access_denied" {
 			handleError(AccessDenied, w, r)
 			return
 		}
@@ -135,7 +136,7 @@ func (oauth *StravaOAuth) HandlerFunc(
 			return
 		}
 
-		tokens.withScopes(r.URL.Query().Get("scope"))
+		tokens.withScopes(params.Get("scope"))
 
 		handleSuccess(tokens, w, r)
 	}
