@@ -26,7 +26,7 @@ type RequestOption struct {
 	Body   io.Reader
 }
 
-func NewStravaClient(clientID, clientSecret string, scopes []string, customClient *http.Client) *StravaClient {
+func NewStravaClient(clientID, clientSecret string, customClient *http.Client) *StravaClient {
 
 	strava := &StravaClient{
 		clientID: clientID,
@@ -39,7 +39,6 @@ func NewStravaClient(clientID, clientSecret string, scopes []string, customClien
 
 	return strava
 }
-
 
 func (sc *StravaClient) do_request(r *http.Request, v interface{}) error {
 

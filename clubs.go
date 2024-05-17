@@ -8,7 +8,7 @@ import (
 )
 
 type StravaClubs struct {
-	AccessToken string
+	accessToken string
 	*StravaClient
 }
 
@@ -18,7 +18,7 @@ func (sc *StravaClubs) GetById(ctx context.Context, id int64) (*DetailedClub, er
 	path := fmt.Sprintf("/clubs/%d", id)
 
 	var resp DetailedClub
-	if err := sc.get(ctx, sc.AccessToken, path, nil, &resp); err != nil {
+	if err := sc.get(ctx, sc.accessToken, path, nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -41,7 +41,7 @@ func (sc *StravaClubs) GetAdministrators(ctx context.Context, id int64, opt *Gen
 	}
 
 	var resp []SummaryAthlete
-	if err := sc.get(ctx, sc.AccessToken, path, params, &resp); err != nil {
+	if err := sc.get(ctx, sc.accessToken, path, params, &resp); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +65,7 @@ func (sc *StravaClubs) GetActivities(ctx context.Context, id int64, opt *General
 	}
 
 	var resp []ClubActivity
-	if err := sc.get(ctx, sc.AccessToken, path, params, &resp); err != nil {
+	if err := sc.get(ctx, sc.accessToken, path, params, &resp); err != nil {
 		return nil, err
 	}
 
@@ -88,7 +88,7 @@ func (sc *StravaClubs) GetMembers(ctx context.Context, id int64, opt *GeneralPar
 	}
 
 	var resp []ClubAthlete
-	if err := sc.get(ctx, sc.AccessToken, path, params, &resp); err != nil {
+	if err := sc.get(ctx, sc.accessToken, path, params, &resp); err != nil {
 		return nil, err
 	}
 
