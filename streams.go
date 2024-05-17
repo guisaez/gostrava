@@ -1,4 +1,4 @@
-package go_strava
+package gostrava
 
 import (
 	"context"
@@ -7,6 +7,11 @@ import (
 	"strconv"
 	"strings"
 )
+
+type StravaStreams struct {
+    AccessToken string
+	*StravaClient
+}
 
 type StreamKey string
 
@@ -37,7 +42,7 @@ var AllowedStreamKeys = struct {
 }
 
 // Returns the given activity's streams. Requires activity:read scope. Requires activity:read_all scope for Only Me activities.
-func (sc *StravaClient) GetActivityStreams(ctx context.Context, id int64, keys []StreamKey, key_by_type bool) (*StreamSet, error) {
+func (sc *StravaStreams) GetActivityStreams(ctx context.Context, id int64, keys []StreamKey, key_by_type bool) (*StreamSet, error) {
     path := fmt.Sprintf("/activities/%d/streams", id)
 
  
@@ -53,7 +58,7 @@ func (sc *StravaClient) GetActivityStreams(ctx context.Context, id int64, keys [
     }
 
     var resp StreamSet
-    err := sc.get(ctx, path, queryParams, &resp)
+    err := sc.get(ctx, sc.AccessToken, path, queryParams, &resp)
     if err != nil {
         return nil, err
     }
@@ -62,11 +67,11 @@ func (sc *StravaClient) GetActivityStreams(ctx context.Context, id int64, keys [
 }
 
 // Returns the given route's streams. Requires read_all scope for private routes.
-func (sc *StravaClient) GetRouteStreams(ctx context.Context, id int64) (*StreamSet, error) {
+func (sc *StravaStreams) GetRouteStreams(ctx context.Context, id int64) (*StreamSet, error) {
 	path := fmt.Sprintf("/routes/%d/streams", id)
 
 	var resp StreamSet
-    err := sc.get(ctx, path, nil, &resp)
+    err := sc.get(ctx, sc.AccessToken, path, nil, &resp)
     if err != nil {
         return nil, err
     }
@@ -75,7 +80,7 @@ func (sc *StravaClient) GetRouteStreams(ctx context.Context, id int64) (*StreamS
 }
 
 // Returns a set of streams for a segment effort completed by the authenticated athlete. Requires read_all scope.
-func (sc *StravaClient) GetSegmentEffortStreams(ctx context.Context, id int64, keys []StreamKey, key_by_type bool) (*StreamSet, error) {
+func (sc *StravaStreams) GetSegmentEffortStreams(ctx context.Context, id int64, keys []StreamKey, key_by_type bool) (*StreamSet, error) {
     path := fmt.Sprintf("/segment_efforts/%d/streams", id)
 
     queryParams := url.Values{}
@@ -90,7 +95,7 @@ func (sc *StravaClient) GetSegmentEffortStreams(ctx context.Context, id int64, k
     }
 
     var resp StreamSet
-    err := sc.get(ctx, path, queryParams, &resp)
+    err := sc.get(ctx, sc.AccessToken, path, queryParams, &resp)
     if err != nil {
         return nil, err
     }
@@ -99,10 +104,10 @@ func (sc *StravaClient) GetSegmentEffortStreams(ctx context.Context, id int64, k
 }
 
 // Returns the given segment's streams. Requires read_all scope for private segments.
-func (sc *StravaClient) GetSegmentStreams(ctx context.Context, id int64, keys []StreamKey, key_by_type bool) (*StreamSet, error) {
-    path := fmt.Sprintf("/segments/%d/streams", id)
+func (sc *StravaStreams) GetSegmentStreams(ctx context.Context, id int64, keys []StreamKey, key_by_type bool) (*StreamSet, error) {
+    
+	path := fmt.Sprintf("/segments/%d/streams", id)
 
- 
     queryParams := url.Values{}
     queryParams.Set("key_by_type", strconv.FormatBool(key_by_type))
 
@@ -115,7 +120,7 @@ func (sc *StravaClient) GetSegmentStreams(ctx context.Context, id int64, keys []
     }
 
     var resp StreamSet
-    err := sc.get(ctx, path, queryParams, &resp)
+    err := sc.get(ctx, sc.AccessToken, path, queryParams, &resp)
     if err != nil {
         return nil, err
     }

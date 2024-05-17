@@ -1,20 +1,17 @@
-package go_strava
+package gostrava
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 type StravaSubscription struct {
-	ClientID     string
-	ClientSecret string
 	CallbackURL  string
 	VerifyToken  string
-	// Generates an HTTP Client for making requests during the OAuth token exchange process.
-	RequestClient func(r *http.Request) *http.Client
+	
+	*StravaClient
 }
 
 type Subscription struct {
@@ -25,32 +22,16 @@ func (ss *StravaSubscription) CreateSubscription(ctx context.Context, callbackUR
 
 	apiUrl := baseURL + "/push_notifications"
 
-	// Create the request body
+	// Create the request body as url params, this will be handled internally
 	params := url.Values{}
-	params.Set("client_id", ss.ClientID)
-	params.Set("client_secret", ss.ClientSecret)
+	params.Set("client_id", ss.clientID)
+	params.Set("client_secret", ss.clientSecret)
 	params.Set("callback_url", ss.CallbackURL)
 	params.Set("verify_token", ss.VerifyToken)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiUrl, strings.NewReader(params.Encode()))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, err
-	}
-
 	var subscription Subscription
-	if err := json.NewDecoder(resp.Body).Decode(&subscription); err != nil {
+	err := ss.put(context.Background(),"", "application/x-www-form-urlencoded", apiUrl, params, subscription)
+	if err != nil {
 		return nil, err
 	}
 

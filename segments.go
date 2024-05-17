@@ -1,4 +1,4 @@
-package go_strava
+package gostrava
 
 import (
 	"context"
@@ -7,6 +7,24 @@ import (
 	"strconv"
 )
 
+type StravaSegments struct {
+	AccessToken string
+	*StravaClient
+}
+
+// Returns the specified segment, read_all scope required in order to retrieve athlete specific segment information,
+// or to retrieve private segments.
+func (sc *StravaSegments) GetById(ctx context.Context, id int64) (*DetailedSegment, error) {
+	path := fmt.Sprintf("/segments/%d", id)
+
+	var res DetailedSegment
+	if err := sc.get(ctx, sc.AccessToken, path, nil, &res); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 type Bounds struct {
 	SWLat float64
 	SWLng float64
@@ -14,28 +32,14 @@ type Bounds struct {
 	NELng float64
 }
 
-// TO-DO Be More specific here!
 type ExploreSegmentsOpts struct {
 	ActivityType string // Desired activity type. May take one of the following values: running, riding.
 	MinCat       int    // The minimum climbing category
 	MaxCat       int    // The maximum climbing category
 }
 
-// Returns the specified segment, read_all scope required in order to retrieve athlete specific segment information,
-// or to retrieve private segments. 
-func (sc *StravaClient) GetSegmentById(ctx context.Context, id int64) (*DetailedSegment, error) {
-	path := fmt.Sprintf("/segments/%d", id)
-
-	var res DetailedSegment
-	if err := sc.get(ctx, path, nil, &res); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
 // Returns the top 10 segments matching a specified query.
-func (sc *StravaClient) ExploreSegments(ctx context.Context, bounds Bounds, opt *ExploreSegmentsOpts) ([]ExplorerResponse, error) {
+func (sc *StravaSegments) Explore(ctx context.Context, bounds Bounds, opt *ExploreSegmentsOpts) ([]ExplorerResponse, error) {
 
 	params := url.Values{}
 	params.Set("bounds", bounds.toString())
@@ -53,7 +57,7 @@ func (sc *StravaClient) ExploreSegments(ctx context.Context, bounds Bounds, opt 
 	}
 
 	var resp []ExplorerResponse
-	if err := sc.get(ctx, "/segments/explore", params, &resp); err != nil {
+	if err := sc.get(ctx, sc.AccessToken, "/segments/explore", params, &resp); err != nil {
 		return nil, err
 	}
 
@@ -61,7 +65,7 @@ func (sc *StravaClient) ExploreSegments(ctx context.Context, bounds Bounds, opt 
 }
 
 // List of the authenticated athlete's starred segments. Private segments are filtered out unless requested by a token with read_all scope.
-func (sc *StravaClient) ListStarredSegments(ctx context.Context, opt *GeneralParams) ([]SummarySegment, error) {
+func (sc *StravaSegments) ListStarred(ctx context.Context, opt *GeneralParams) ([]SummarySegment, error) {
 
 	params := url.Values{}
 	if opt != nil {
@@ -74,7 +78,7 @@ func (sc *StravaClient) ListStarredSegments(ctx context.Context, opt *GeneralPar
 	}
 
 	var resp []SummarySegment
-	if err := sc.get(ctx, "/segments/starred", params, &resp); err != nil {
+	if err := sc.get(ctx, sc.AccessToken, "/segments/starred", params, &resp); err != nil {
 		return nil, err
 	}
 
@@ -82,19 +86,14 @@ func (sc *StravaClient) ListStarredSegments(ctx context.Context, opt *GeneralPar
 }
 
 // // TO-DO
-// func (sc *StravaClient) StarSegment (ctx context.Context, id uint64, starred bool) (*DetailedSegment, error) {
+// func (sc *StravaSegments) StarSegment (ctx context.Context, id uint64, starred bool) (*DetailedSegment, error) {
 	
 // 	path := fmt.Sprintf("/segments/%d/starred")
 
 // 	var res DetailedSegment
-// 	if err := sc.do(ctx, http.MethodGet, path, params, nil, &res); err != nil {
+// 	if err := sc.do(ctx, http.MethodGet, sc.AccessToken, path, params, nil, &res); err != nil {
 // 		return nil, err
 // 	}
 
 // 	return &res, nil
 // }
-
-
-func (b *Bounds) toString() string {
-	return fmt.Sprintf("%2f,%2f,%2f,%2f", b.SWLat, b.SWLng, b.NELat, b.NELng)
-}

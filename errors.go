@@ -1,43 +1,33 @@
-package go_strava
+package gostrava
 
 import "encoding/json"
 
 type Error struct {
-	Code     string `json:"code"`     // The code associated with this error.
-	Field    string `json:"field"`    // The specific field or aspect of the resource associated with this error.
-	Resource string `json:"resource"` // The type of resource associated with this error.
+	Errors  []ErrorContent `json:"errors"`
+	Message string         `json:"message"`
 }
 
-type Fault struct {
-	Errors  []Error `json:"errors"`  // The set of specific errors associated with this fault, if any.
-	Message string  `json:"message"` // The message of the fault.
+type ErrorContent struct {
+	Code     string `json:"code"`
+	Field    string `json:"field"`
+	Resource string `json:"resource"`
 }
 
-func (f *Fault) Error() string {
-	b, _ := json.Marshal(f)
-	return string(b)
+func (e *Error) Error() string {
+	err, _ := json.Marshal(e)
+	return string(err)
 }
 
 type StravaOAuthError struct {
-	message string
+	Message string
 }
 
-// Implements error type
 func (e *StravaOAuthError) Error() string {
-	return e.message
-}
-
-type StravaClientError struct {
-	message string
-}
-
-func (e *StravaClientError) Error() string {
-	return e.message
+	return e.Message
 }
 
 var (
-	OAuthAccessDeniedErr         = &StravaOAuthError{"access denied"}
-	OAuthInvalidCredentialsError = &StravaOAuthError{"invalid client_id or client_secret"}
-	OAuthInvalidCodeError        = &StravaOAuthError{"invalid code"}
-	OAuthInternalError           = &StravaOAuthError{"internal server error"}
+	InvalidCodeError = &StravaOAuthError{"invalid code"}
+	AccessDeniedError     = &StravaOAuthError{"access_denied"}
+	InternalServerError = &Error{Message: "internal server error"}
 )
