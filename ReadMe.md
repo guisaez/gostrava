@@ -65,3 +65,68 @@ func main(){
     ...
 }
 ```
+
+### OAuth
+
+```go
+oauth := &StravaOAuth{
+    CallbackURL: "http://localhost:8080/callback"
+    Scopes: []string{strava.Scopes.Read}
+    StravaClient: NewStravaClient(clientId, clientSecret, nil)
+}
+```
+
+Applying Client Redirection to Init OAuth Flow - Example
+
+```go
+func(w http.ResponseWriter, *http.Request) {
+    ...
+
+    // Redirects the user to the Strava Authorization Page
+    w.Redirect(oauth.AuthCodeURL(true, ""), http.StatusFound)
+}
+```
+
+Requesting Access and RefreshTokens
+
+```go
+
+    authCode := "123123"
+    tokens, err := oauth.Exchange(code)
+```
+
+Refreshing the tokens
+```go
+
+    refreshToken := "a1231"
+
+    tokens, err := oauth.Refresh(refreshToken)
+```
+
+Revoking Access
+
+```go
+    accessToken = "123421a"
+
+    err := oauth.Revoke(accessToken)
+```
+
+Storing Session Info
+
+```go
+func main() {
+
+    onSuccess := func(tokens *StravaOAuthResponse, w http.ResponseWriter, r *http.Request) {
+        // Add login here
+
+        // Save tokens on Database etc
+    }
+
+    onFailure := func(err error, w http.ResponseWrite, r *http.Request) {
+        // Handle the error here
+    }
+
+    router.HandleFunc("GET /callback", oauth.HandlerFunc(onSuccess, onFailure))
+    
+}
+```
