@@ -88,8 +88,8 @@ func (oauth *StravaOAuth) AuthCodeURL(force bool, state string) string {
 	url := fmt.Sprintf(
 		"%s?response_type=code&client_id=%s&client_secret=%s&redirect_uri=%s&scope=%s&state=%s",
 		endpoints.Auth,
-		oauth.clientID,
-		oauth.clientSecret,
+		oauth.ClientID,
+		oauth.ClientSecret,
 		oauth.CallbackURL,
 		strings.Join(oauth.Scopes, ","),
 		state,
@@ -111,8 +111,8 @@ func (oauth *StravaOAuth) Exchange(code string) (*StravaOAuthResponse, error) {
 
 	var response StravaOAuthResponse
 	err := oauth.postForm(context.Background(), "", endpoints.Token, url.Values{
-		"client_id": { oauth.clientID },
-		"client_secret": { oauth.clientSecret },
+		"client_id": { oauth.ClientID },
+		"client_secret": { oauth.ClientSecret },
 		"code": { code },
 		"grant_type": { "authorization_code" },
 	}, &response)
@@ -137,14 +137,15 @@ func (oauth *StravaOAuth) RevokeAccess(access_token string) error {
 func (oauth *StravaOAuth) Refresh(refreshToken string) (*RefreshTokenResponse, error) {
 
 	payload, err := json.Marshal(RefreshTokenPayload{
-		ClientID: oauth.clientID,
-		ClientSecret: oauth.clientSecret,
+		ClientID: oauth.ClientID,
+		ClientSecret: oauth.ClientSecret,
 		RefreshToken: refreshToken,
 		GrantType: "refresh_token",
 	})
 	if err != nil {
 		return nil, err
 	}
+
 
 	resp, err := oauth.client.Post(endpoints.Token, "application/json", bytes.NewReader(payload))
 	if err != nil {

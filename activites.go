@@ -8,10 +8,7 @@ import (
 	"time"
 )
 
-type StravaActivities struct {
-	AccessToken string
-	*StravaClient
-}
+type StravaActivities baseModule
 
 type GeneralParams struct {
 	Page    int // Page number. Defaults to 1
@@ -19,19 +16,19 @@ type GeneralParams struct {
 }
 
 type NewActivityRequest struct {
-	Name           string       `json:"name"`             // The name of the activity.
-	Type           ActivityType `json:"type"`             // Type of activity. For example - Run, Ride etc.
-	SportType      SportType    `json:"sport_type"`       // Sport type of activity. For example - Run, MountainBikeRide, Ride, etc.
-	StartDateLocal time.Time    `json:"start_date_local"` // ISO 8601 formatted date time.
-	ElapsedTime    int          `json:"elapsed_time"`     // In seconds.
-	Description    string       `json:"description"`      // Description of the activity.
-	Distance       int          `json:"distance"`         // In meters.
-	Trainer        int8         `json:"trainer"`          // Set to 1 to mark as a trainer activity.
-	Commute        int8         `json:"commute"`          // Set to 1 to mark as commute.
+	Name           string       `json:"name"`                  // The name of the activity.
+	Type           ActivityType `json:"type,omitempty"`        // Type of activity. For example - Run, Ride etc.
+	SportType      SportType    `json:"sport_type"`            // Sport type of activity. For example - Run, MountainBikeRide, Ride, etc.
+	StartDateLocal time.Time    `json:"start_date_local"`      // ISO 8601 formatted date time.
+	ElapsedTime    int          `json:"elapsed_time"`          // In seconds.
+	Description    string       `json:"description,omitempty"` // Description of the activity.
+	Distance       int          `json:"distance,omitempty"`    // In meters.
+	Trainer        int8         `json:"trainer,omitempty"`     // Set to 1 to mark as a trainer activity.
+	Commute        int8         `json:"commute,omitempty"`     // Set to 1 to mark as commute.
 }
 
 // Creates a manual activity for an athlete, requires activity:write scope.
-func (sc *StravaActivities) New(ctx context.Context, payload NewActivityRequest) (*DetailedActivity, error) {
+func (sc *StravaActivities) New(ctx context.Context, access_token string, payload NewActivityRequest) (*DetailedActivity, error) {
 
 	params := url.Values{}
 	params.Set("name", payload.Name)
@@ -47,7 +44,7 @@ func (sc *StravaActivities) New(ctx context.Context, payload NewActivityRequest)
 	path := "/activities"
 
 	var detailedActivity DetailedActivity
-	err := sc.postForm(ctx, sc.AccessToken, path, params, &detailedActivity)
+	err := sc.client.postForm(ctx, access_token, path, params, &detailedActivity)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +55,7 @@ func (sc *StravaActivities) New(ctx context.Context, payload NewActivityRequest)
 // Returns the given activity that is owned by the authenticated athlete.
 // Requires activity:read for Everyone and Followers activities.
 // Requires activity:read_all for Only Me activities.
-func (sc *StravaActivities) ByID(ctx context.Context, activityID int64, includeEfforts bool) (*DetailedActivity, error) {
+func (sc *StravaActivities) ByID(ctx context.Context, access_token string, activityID int64, includeEfforts bool) (*DetailedActivity, error) {
 
 	path := fmt.Sprintf("/activities/%d", activityID)
 
@@ -66,7 +63,7 @@ func (sc *StravaActivities) ByID(ctx context.Context, activityID int64, includeE
 	params.Add("include_all_efforts", fmt.Sprintf("%v", includeEfforts))
 
 	var resp DetailedActivity
-	err := sc.get(ctx, sc.AccessToken, path, params, &resp)
+	err := sc.client.get(ctx, access_token, path, params, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -77,18 +74,17 @@ func (sc *StravaActivities) ByID(ctx context.Context, activityID int64, includeE
 // Summit Feature. Returns the zones of a given activity.
 // Requires activity:read for Everyone and Followers activities.
 // Requires activity:read_all for Only Me activities.
-func (sc *StravaActivities) GetZones(ctx context.Context, activityID int64) ([]ActivityZone, error) {
+func (sc *StravaActivities) GetZones(ctx context.Context, access_token string, activityID int64) ([]ActivityZone, error) {
 
 	path := fmt.Sprintf("/activities/%d", activityID)
 
 	var resp []ActivityZone
-	err := sc.get(ctx, sc.AccessToken, path, nil, &resp)
+	err := sc.client.get(ctx, access_token, path, nil, &resp)
 	if err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
-
 
 type GetCommentsOptions struct {
 	PageSize    int    // Number of items per page. Defaults to 30
@@ -96,7 +92,7 @@ type GetCommentsOptions struct {
 }
 
 // Returns the comments on the given activity. Requires activity:read for Everyone and Followers activities. Requires activity:read_all for Only Me activities.
-func (sc *StravaActivities) GetComments(ctx context.Context, activityID int64, opt *GetCommentsOptions) ([]Comment, error) {
+func (sc *StravaActivities) GetComments(ctx context.Context, access_token string, activityID int64, opt *GetCommentsOptions) ([]Comment, error) {
 
 	path := fmt.Sprintf("/activities/%d/comments", activityID)
 
@@ -111,7 +107,7 @@ func (sc *StravaActivities) GetComments(ctx context.Context, activityID int64, o
 	}
 
 	var resp []Comment
-	err := sc.get(ctx, sc.AccessToken, path, params, &resp)
+	err := sc.client.get(ctx, access_token, path, params, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +117,7 @@ func (sc *StravaActivities) GetComments(ctx context.Context, activityID int64, o
 
 // Returns the athletes who kudoed an activity identified by an identifier. Requires activity:read for Everyone and Followers activities.
 // Requires activity:read_all for OnlyMe Activities
-func (sc *StravaActivities) GetKudoers(ctx context.Context, activityID int64, opt *GeneralParams) ([]SummaryAthlete, error) {
+func (sc *StravaActivities) GetKudoers(ctx context.Context, access_token string, activityID int64, opt *GeneralParams) ([]SummaryAthlete, error) {
 
 	path := fmt.Sprintf("/activities/%d/kudos", activityID)
 
@@ -136,7 +132,7 @@ func (sc *StravaActivities) GetKudoers(ctx context.Context, activityID int64, op
 	}
 
 	var resp []SummaryAthlete
-	err := sc.get(ctx, sc.AccessToken, path, params, &resp)
+	err := sc.client.get(ctx, access_token, path, params, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -146,12 +142,12 @@ func (sc *StravaActivities) GetKudoers(ctx context.Context, activityID int64, op
 
 // Returns the laps of an activity identified by an identifier. Requires activity:read for Everyone and
 // Follower activities. Required activity:read_all for OnlyMeActivities.
-func (sc *StravaActivities) GetLaps(ctx context.Context, activityID int64) ([]Lap, error) {
+func (sc *StravaActivities) GetLaps(ctx context.Context, access_token string, activityID int64) ([]Lap, error) {
 
 	path := fmt.Sprintf("/activities/%d/laps", activityID)
 
 	var resp []Lap
-	err := sc.get(ctx, sc.AccessToken, path, nil, &resp)
+	err := sc.client.get(ctx, access_token, path, nil, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -161,12 +157,12 @@ func (sc *StravaActivities) GetLaps(ctx context.Context, activityID int64) ([]La
 
 // Updates the given activity that is owned by the authenticated athlete. Requires activity:write. Also requires activity:read_all in order
 // to update only me activities.
-func (sc *StravaActivities) UpdateActivity(ctx context.Context, activityID int64, ua UpdatableActivity) (*DetailedActivity, error) {
+func (sc *StravaActivities) UpdateActivity(ctx context.Context, access_token string, activityID int64, ua UpdatableActivity) (*DetailedActivity, error) {
 
 	path := fmt.Sprintf("/activities/%d", activityID)
 
 	var resp DetailedActivity
-	err := sc.put(ctx, sc.AccessToken, path, "application/json", ua, &resp)
+	err := sc.client.put(ctx, access_token, path, "application/json", ua, &resp)
 	if err != nil {
 		return nil, err
 	}

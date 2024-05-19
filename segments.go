@@ -7,18 +7,15 @@ import (
 	"strconv"
 )
 
-type StravaSegments struct {
-	AccessToken string
-	*StravaClient
-}
+type StravaSegments baseModule
 
 // Returns the specified segment, read_all scope required in order to retrieve athlete specific segment information,
 // or to retrieve private segments.
-func (sc *StravaSegments) GetById(ctx context.Context, id int64) (*DetailedSegment, error) {
+func (sc *StravaSegments) GetById(ctx context.Context, access_token string, id int64) (*DetailedSegment, error) {
 	path := fmt.Sprintf("/segments/%d", id)
 
 	var res DetailedSegment
-	if err := sc.get(ctx, sc.AccessToken, path, nil, &res); err != nil {
+	if err := sc.client.get(ctx, access_token, path, nil, &res); err != nil {
 		return nil, err
 	}
 
@@ -39,7 +36,7 @@ type ExploreSegmentsOpts struct {
 }
 
 // Returns the top 10 segments matching a specified query.
-func (sc *StravaSegments) Explore(ctx context.Context, bounds Bounds, opt *ExploreSegmentsOpts) ([]ExplorerResponse, error) {
+func (sc *StravaSegments) Explore(ctx context.Context, access_token string, bounds Bounds, opt *ExploreSegmentsOpts) ([]ExplorerResponse, error) {
 
 	params := url.Values{}
 	params.Set("bounds", bounds.toString())
@@ -57,7 +54,7 @@ func (sc *StravaSegments) Explore(ctx context.Context, bounds Bounds, opt *Explo
 	}
 
 	var resp []ExplorerResponse
-	if err := sc.get(ctx, sc.AccessToken, "/segments/explore", params, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, "/segments/explore", params, &resp); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +62,7 @@ func (sc *StravaSegments) Explore(ctx context.Context, bounds Bounds, opt *Explo
 }
 
 // List of the authenticated athlete's starred segments. Private segments are filtered out unless requested by a token with read_all scope.
-func (sc *StravaSegments) ListStarred(ctx context.Context, opt *GeneralParams) ([]SummarySegment, error) {
+func (sc *StravaSegments) ListStarred(ctx context.Context, access_token string, opt *GeneralParams) ([]SummarySegment, error) {
 
 	params := url.Values{}
 	if opt != nil {
@@ -78,7 +75,7 @@ func (sc *StravaSegments) ListStarred(ctx context.Context, opt *GeneralParams) (
 	}
 
 	var resp []SummarySegment
-	if err := sc.get(ctx, sc.AccessToken, "/segments/starred", params, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, "/segments/starred", params, &resp); err != nil {
 		return nil, err
 	}
 

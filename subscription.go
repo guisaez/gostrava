@@ -24,8 +24,8 @@ func (ss *StravaSubscription) CreateSubscription(ctx context.Context, callbackUR
 
 	// Create the request body as url params, this will be handled internally
 	params := url.Values{}
-	params.Set("client_id", ss.clientID)
-	params.Set("client_secret", ss.clientSecret)
+	params.Set("client_id", ss.ClientID)
+	params.Set("client_secret", ss.ClientSecret)
 	params.Set("callback_url", ss.CallbackURL)
 	params.Set("verify_token", ss.VerifyToken)
 

@@ -7,18 +7,15 @@ import (
 	"strconv"
 )
 
-type StravaClubs struct {
-	accessToken string
-	*StravaClient
-}
+type StravaClubs baseModule
 
 // Returns a given club using its identifier
-func (sc *StravaClubs) GetById(ctx context.Context, id int64) (*DetailedClub, error) {
+func (sc *StravaClubs) GetById(ctx context.Context, access_token string, id int64) (*DetailedClub, error) {
 
 	path := fmt.Sprintf("/clubs/%d", id)
 
 	var resp DetailedClub
-	if err := sc.get(ctx, sc.accessToken, path, nil, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, path, nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -26,7 +23,7 @@ func (sc *StravaClubs) GetById(ctx context.Context, id int64) (*DetailedClub, er
 }
 
 // Returns a list of the administrators of a given club.
-func (sc *StravaClubs) GetAdministrators(ctx context.Context, id int64, opt *GeneralParams) ([]SummaryAthlete, error) {
+func (sc *StravaClubs) GetAdministrators(ctx context.Context, access_token string, id int64, opt *GeneralParams) ([]SummaryAthlete, error) {
 
 	path := fmt.Sprintf("/clubs/%d/admins", id)
 
@@ -41,7 +38,7 @@ func (sc *StravaClubs) GetAdministrators(ctx context.Context, id int64, opt *Gen
 	}
 
 	var resp []SummaryAthlete
-	if err := sc.get(ctx, sc.accessToken, path, params, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, path, params, &resp); err != nil {
 		return nil, err
 	}
 
@@ -50,7 +47,7 @@ func (sc *StravaClubs) GetAdministrators(ctx context.Context, id int64, opt *Gen
 
 // Retrieve recent activities from members of a specific club. The authenticated athlete must belong to the request club in order to hit this endpoint, Pagination is supported. Athlete profile
 // visibility is respected for all activities.
-func (sc *StravaClubs) GetActivities(ctx context.Context, id int64, opt *GeneralParams) ([]ClubActivity, error) {
+func (sc *StravaClubs) GetActivities(ctx context.Context, access_token string, id int64, opt *GeneralParams) ([]ClubActivity, error) {
 
 	path := fmt.Sprintf("/clubs/%d/activities", id)
 
@@ -65,7 +62,7 @@ func (sc *StravaClubs) GetActivities(ctx context.Context, id int64, opt *General
 	}
 
 	var resp []ClubActivity
-	if err := sc.get(ctx, sc.accessToken, path, params, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, path, params, &resp); err != nil {
 		return nil, err
 	}
 
@@ -73,7 +70,7 @@ func (sc *StravaClubs) GetActivities(ctx context.Context, id int64, opt *General
 }
 
 // Returns of list of the athletes who are members of a given club.
-func (sc *StravaClubs) GetMembers(ctx context.Context, id int64, opt *GeneralParams) ([]ClubAthlete, error) {
+func (sc *StravaClubs) GetMembers(ctx context.Context, access_token string, id int64, opt *GeneralParams) ([]ClubAthlete, error) {
 
 	path := fmt.Sprintf("/clubs/%d/members", id)
 
@@ -88,7 +85,7 @@ func (sc *StravaClubs) GetMembers(ctx context.Context, id int64, opt *GeneralPar
 	}
 
 	var resp []ClubAthlete
-	if err := sc.get(ctx, sc.accessToken, path, params, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, path, params, &resp); err != nil {
 		return nil, err
 	}
 

@@ -14,30 +14,58 @@ import (
 
 var baseURL string = "https://www.strava.com/api/v3"
 
-type StravaClient struct {
-	clientID     string   // The application’s ID, obtained during registration.
-	clientSecret string   // The application’s secret, obtained during registration.
+type HTTPClient interface {
+	Do(r *http.Request) (*http.Response, error)
+	Post(url, contentType string, body io.Reader) (*http.Response, error)
+}
 
-	client *http.Client
+type StravaClient struct {
+	ClientID     string // The application’s ID, obtained during registration.
+	ClientSecret string // The application’s secret, obtained during registration.
+
+	client HTTPClient
+
+	Activities     *StravaActivities
+	Athletes       *StravaAthletes
+	Clubs          *StravaClubs
+	Gears          *StravaGears
+	Routes         *StravaRoutes
+	SegmentEfforts *StravaSegmentEfforts
+	Segments       *StravaSegments
+	Streams        *StravaStreams
+}
+
+type baseModule struct {
+	client *StravaClient
+}
+
+func NewStravaClient(clientID, clientSecret string, customClient HTTPClient) *StravaClient {
+	if customClient == nil {
+		customClient = http.DefaultClient
+	}
+
+	client := &StravaClient{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		client:       customClient,
+	}
+
+	// Initialize modules˝
+	client.Activities = &StravaActivities{client: client}
+	client.Athletes = &StravaAthletes{client: client}
+	client.Clubs = &StravaClubs{client: client}
+	client.Gears = &StravaGears{client: client}
+	client.Routes = &StravaRoutes{client: client}
+	client.SegmentEfforts = &StravaSegmentEfforts{client: client}
+	client.Segments = &StravaSegments{client: client}
+	client.Streams = &StravaStreams{client: client}
+
+	return client
 }
 
 type RequestOption struct {
 	Params url.Values
 	Body   io.Reader
-}
-
-func NewStravaClient(clientID, clientSecret string, customClient *http.Client) *StravaClient {
-
-	strava := &StravaClient{
-		clientID: clientID,
-		clientSecret: clientSecret,
-		client:      http.DefaultClient,
-	}
-	if customClient != nil {
-		strava.client = customClient
-	}
-
-	return strava
 }
 
 func (sc *StravaClient) do_request(r *http.Request, v interface{}) error {
@@ -63,7 +91,7 @@ func (sc *StravaClient) do_request(r *http.Request, v interface{}) error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -75,7 +103,7 @@ func (sc *StravaClient) get(ctx context.Context, access_token, path string, para
 	}
 
 	if access_token != "" {
-		req.Header.Add("Authorization", "Bearer " + access_token)
+		req.Header.Add("Authorization", "Bearer "+access_token)
 	}
 
 	return sc.do_request(req, v)
@@ -91,11 +119,11 @@ func (sc *StravaClient) postForm(ctx context.Context, access_token, path string,
 	req.Header.Set("Content-Type", "application/x-www-form-url/encoded")
 
 	if access_token != "" {
-		req.Header.Add("Authorization", "Bearer " + access_token)
+		req.Header.Add("Authorization", "Bearer "+access_token)
 	}
 
 	if access_token != "" {
-		req.Header.Add("Authorization", "Bearer " + access_token)
+		req.Header.Add("Authorization", "Bearer "+access_token)
 	}
 
 	return sc.do_request(req, v)
@@ -129,7 +157,7 @@ func (sc *StravaClient) put(ctx context.Context, access_token, path, contentType
 	req.Header.Set("Content-Type", contentType)
 
 	if access_token != "" {
-		req.Header.Add("Authorization", "Bearer " + access_token)
+		req.Header.Add("Authorization", "Bearer "+access_token)
 	}
 
 	return sc.do_request(req, v)

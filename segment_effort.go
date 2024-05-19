@@ -7,18 +7,15 @@ import (
 	"time"
 )
 
-type StravaSegmentEfforts struct {
-	AccessToken string
-	*StravaClient
-}
+type StravaSegmentEfforts baseModule
 
 // Returns a segment effort from an activity that is owned by the authenticated athlete. Requires subscription.
-func (sc *StravaSegmentEfforts) GetById(ctx context.Context, id int64) (*DetailedSegmentEffort, error) {
+func (sc *StravaSegmentEfforts) GetById(ctx context.Context,access_token string, id int64) (*DetailedSegmentEffort, error) {
 
 	path := fmt.Sprintf("/segment_efforts/%d", id)
 
 	var resp DetailedSegmentEffort
-	if err := sc.get(ctx, sc.AccessToken, path, nil, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, path, nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -32,7 +29,7 @@ type ListSegmentEffortOptions struct {
 }
 
 // Returns a set of the authenticated athlete's segment efforts for a given segment. Requires subscription
-func (sc *StravaSegmentEfforts) List(ctx context.Context, opt *ListSegmentEffortOptions) (*DetailedSegmentEffort, error) {
+func (sc *StravaSegmentEfforts) List(ctx context.Context, access_token string, opt *ListSegmentEffortOptions) (*DetailedSegmentEffort, error) {
 
 	params := url.Values{}
 
@@ -49,7 +46,7 @@ func (sc *StravaSegmentEfforts) List(ctx context.Context, opt *ListSegmentEffort
 	}
 
 	var resp DetailedSegmentEffort
-	if err := sc.get(ctx, sc.AccessToken, "/segment_efforts", params, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, "/segment_efforts", params, &resp); err != nil {
 		return nil, err
 	}
 

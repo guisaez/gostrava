@@ -7,17 +7,14 @@ import (
 	"strconv"
 )
 
-type StravaAthletes struct {
-	AccessToken string
-	*StravaClient
-}
+type StravaAthletes baseModule
 
 // Returns the currently authenticated athlete. Tokens with profile:read_all scope will receive
 // a detailed athlete representation; all others will receive a SummaryAthlete representation
-func (sa *StravaAthletes) CurrentAthlete(ctx context.Context) (*DetailedAthlete, error) {
+func (sc *StravaAthletes) CurrentAthlete(ctx context.Context, access_token string) (*DetailedAthlete, error) {
 
 	var resp DetailedAthlete
-	if err := sa.get(ctx, sa.AccessToken, "/athlete", nil, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, "/athlete", nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -25,9 +22,9 @@ func (sa *StravaAthletes) CurrentAthlete(ctx context.Context) (*DetailedAthlete,
 }
 
 // Returns the authenticated athlete's heart rate and power zones. Requires profile:read_all.
-func (sa *StravaAthletes) GetZones(ctx context.Context) (*Zones, error) {
+func (sc *StravaAthletes) GetZones(ctx context.Context, access_token string) (*Zones, error) {
 	var resp Zones
-	if err := sa.get(ctx, sa.AccessToken, "/athlete/zones", nil, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, "/athlete/zones", nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -35,12 +32,12 @@ func (sa *StravaAthletes) GetZones(ctx context.Context) (*Zones, error) {
 }
 
 // Returns the activity stats of an athlete. Only includes data from activities set to Everyone's visibility.
-func (sa *StravaAthletes) GetAthleteStats(ctx context.Context, id int64) (*ActivityStats, error) {
+func (sc *StravaAthletes) GetAthleteStats(ctx context.Context, access_token string, id int64) (*ActivityStats, error) {
 	
 	path := fmt.Sprintf("/athletes/%d/stats", id)
 
 	var resp ActivityStats
-	if err := sa.get(ctx, sa.AccessToken, path, nil, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, path, nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -48,10 +45,10 @@ func (sa *StravaAthletes) GetAthleteStats(ctx context.Context, id int64) (*Activ
 }
 
 // Return a list of the clubs whose membership includes the authenticated athlete.
-func (sa *StravaAthletes) ListClubs(ctx context.Context) ([]SummaryClub, error) {
+func (sc *StravaAthletes) ListClubs(ctx context.Context, access_token string) ([]SummaryClub, error) {
 
 	var resp []SummaryClub
-	if err := sa.get(ctx, sa.AccessToken, "/athlete/clubs", nil, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, "/athlete/clubs", nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -60,10 +57,10 @@ func (sa *StravaAthletes) ListClubs(ctx context.Context) ([]SummaryClub, error) 
 
 // Returns a list of the routes created by the authenticated athlete. Private routes are filtered out
 // unless request by a token with read_all scope.
-func (sa *StravaAthletes) ListRoutes(ctx context.Context) ([]Route, error) {
+func (sc *StravaAthletes) ListRoutes(ctx context.Context, access_token string) ([]Route, error) {
 
 	var resp []Route
-	if err := sa.get(ctx, sa.AccessToken, "/athlete/routes", nil, &resp); err != nil {
+	if err := sc.client.get(ctx, access_token, "/athlete/routes", nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -75,7 +72,7 @@ type UpdateAthleteReqParams struct {
 }
 
 // Update the currently authenticated athlete. Requires profile:write scope.
-func (sa *StravaAthletes) Update(ctx context.Context, p *UpdateAthleteReqParams) (*DetailedAthlete, error) {
+func (sc *StravaAthletes) Update(ctx context.Context, access_token string, p *UpdateAthleteReqParams) (*DetailedAthlete, error) {
 
 	var params = url.Values{}
 
@@ -84,7 +81,7 @@ func (sa *StravaAthletes) Update(ctx context.Context, p *UpdateAthleteReqParams)
 	}
 
 	var resp DetailedAthlete
-	if err := sa.put(ctx, sa.AccessToken, "/athlete", "application/x-www-form-urlencoded", params, &resp); err != nil {
+	if err := sc.client.put(ctx, access_token, "/athlete", "application/x-www-form-urlencoded", params, &resp); err != nil {
 		return nil, err
 	}
 
@@ -99,7 +96,7 @@ type ListAthleteActivitiesOptions struct {
 
 // Returns the activities of an athlete for a specific identifier. Requires activity:read, OnlyMe activities will be filtered out unless
 // requested by a token with activity_read:all.
-func (sa *StravaAthletes) GetActivities(ctx context.Context, opt *ListAthleteActivitiesOptions) ([]SummaryActivity, error) {
+func (sc *StravaAthletes) GetActivities(ctx context.Context, access_token string, opt *ListAthleteActivitiesOptions) ([]SummaryActivity, error) {
 
 	params := url.Values{}
 	if opt != nil {
@@ -118,7 +115,7 @@ func (sa *StravaAthletes) GetActivities(ctx context.Context, opt *ListAthleteAct
 	}
 
 	var resp []SummaryActivity
-	err := sa.get(ctx, sa.AccessToken, "athlete/activities", params, &resp)
+	err := sc.client.get(ctx, access_token, "athlete/activities", params, &resp)
 	if err != nil {
 		return nil, err
 	}
