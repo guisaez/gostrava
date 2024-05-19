@@ -56,12 +56,7 @@ func main(){
 
     stravaClient := NewStravaClient(clientId, clientSecret, nil)
 
-    athletes = &StravaAthletes{
-        AccessToken: <accessToken>,
-        StravaClient: stravaClient
-    }
-
-    athlete, err := athletes.CurrentAthlete(context.Background())
+    athlete, err := stravaClient.Athletes.CurrentAthlete(context.Background(), <access_token>)
     ...
 }
 ```
