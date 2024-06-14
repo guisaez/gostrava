@@ -2,7 +2,6 @@ package gostrava
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,46 +9,20 @@ import (
 	"strings"
 )
 
-type StravaOAuth struct {
-	CallbackURL string   // URL to which the user will be redirected after authentication. Must be within the callback domain specified by the application. localhost and 127.0.0.1 are white-listed.
-	Scopes      []string // Requested scopes, as a comma delimited string, e.g. "activity:read_all,activity:write". Applications should request only the scopes required for the application to function normally. The scope activity:read is required for activity webhooks.
-
-	*StravaClient
-}
-
-// Token exchange result
-type StravaOAuthResponse struct {
-	AccessToken  string         `json:"access_token"`
-	RefreshToken string         `json:"refresh_token"` // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work.
-	TokenType    string         `json:"token_type"`    // Bearer
-	ExpiresAt    uint64         `json:"expires_at"`    // The number of seconds since the epoch when the provided access token will expire
-	ExpiresIn    int            `json:"expires_in"`    // Seconds until the short-lived access token will expire
-	Athlete      SummaryAthlete `json:"athlete"`       // A summary of the athlete information
-	Scopes       []string
-}
-
-func (oauthResponse *StravaOAuthResponse) withScopes(scopes string)  {
-	oauthResponse.Scopes = strings.Split(scopes, ",")
-}
-
-type RefreshTokenResponse struct {
-	AccessToken  string `json:"access_token"`  // The short-lived access token
-	RefreshToken string `json:"refresh_token"` // The number of seconds since the epoch when the provided access token will expire
-	ExpiresAt    uint64 `json:"expires_at"`    // Seconds until the short-lived access token will expire
-	ExpiresIn    int    `json:"expires_in"`    // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work.
-}
-
-type RefreshTokenPayload struct {
-	RefreshToken string `json:"refresh_token"`
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	GrantType    string `json:"grant_type"`
+var endpoints = struct {
+	Auth        string
+	Unauthorize string
+	Token       string
+}{
+	"https://www.strava.com/oauth/authorize",
+	"https://www.strava.com/oauth/deauthorize",
+	"https://www.strava.com/oauth/token",
 }
 
 // Defines the level of access or permission that the application requests from
 // and user's Strava Account when the user authorizes the application. Determines
 // what actions the application can perform on behalf of the user and what data it can access.
-var Scopes = struct {
+var StravaOAuthScopes = struct {
 	Read            string
 	ReadAll         string
 	ProfileReadAll  string
@@ -67,123 +40,168 @@ var Scopes = struct {
 	"activity:write",
 }
 
-var endpoints = struct {
-	Auth        string
-	Unauthorize string
-	Token       string
-}{
-	"https://www.strava.com/oauth/authorize",
-	"https://www.strava.com/oauth/deauthorize",
-	"https://www.strava.com/oauth/token",
+type StravaOAuthOpts struct {
+	ClientID     string // The application’s ID, obtained during registration.
+	ClientSecret string // The application’s secret, obtained during registration.
+	HTTPClient   HTTPClient
+	CallbackURL  string
+	Scopes       []string
+}
+
+type StravaOAuth struct {
+	StravaOAuthOpts
+
+	client *StravaClient
+}
+
+func NewStravaOAuth(opts StravaOAuthOpts) *StravaOAuth {
+	clientOpts := StravaClientOpts{
+		HttpClient: opts.HTTPClient,
+	}
+
+	if opts.Scopes == nil || len(opts.Scopes) == 0 {
+		opts.Scopes = []string{StravaOAuthScopes.Read}
+	}
+
+	return &StravaOAuth{
+		StravaOAuthOpts: opts,
+		client:          NewStravaClient(clientOpts),
+	}
 }
 
 // Generates the authentication url that will be used to redirect the user to
 // Strava so it can initiate the OAuthFlow
-// State will be returned by the redirect URI. Useful if the authentication is done from
-// various points in the app.
-// Force will always show the authorization prompt even if the user has already authorized the current
-// application
-func (oauth *StravaOAuth) AuthCodeURL(force bool, state string) string {
-
-	url := fmt.Sprintf(
-		"%s?response_type=code&client_id=%s&client_secret=%s&redirect_uri=%s&scope=%s&state=%s",
-		endpoints.Auth,
-		oauth.ClientID,
-		oauth.ClientSecret,
-		oauth.CallbackURL,
-		strings.Join(oauth.Scopes, ","),
-		state,
-	)
+// Args:
+//   - force: Use force to always show the authorization prompt even if the user has already authorized the current application, default is auto.
+//   - state: Returned in the redirect URI. Useful if the authentication is done from various points in an app.
+//
+// Returns the auth code url the user should be redirected to.
+func (oauth *StravaOAuth) GenerateAuthCodeURL(force bool, state string) string {
+	url := fmt.Sprintf("%s?response_type=code&client_id=%s&client_secret=%s&redirect_uri=%s&scope=%s", endpoints.Auth, oauth.ClientID, oauth.ClientSecret, oauth.CallbackURL, strings.Join(oauth.Scopes, ","))
 
 	if force {
-		return url + "&approval_prompt=force"
+		url = fmt.Sprintf("%s&approval_prompt=force", url)
+	}
+
+	if len(state) > 0 {
+		url = fmt.Sprintf("%s&state=%s", url, state)
 	}
 
 	return url
 }
 
-// Handles the token exchange portion of the OAuth2 flow.
-func (oauth *StravaOAuth) Exchange(code string) (*StravaOAuthResponse, error) {
+type StravaOAuthResponse struct {
+	AccessToken  string         `json:"access_token"`
+	ExpiresAt    uint64         `json:"expires_at"`    // The number of seconds since the epoch when the provided access token will expire
+	ExpiresIn    int            `json:"expires_in"`    // Seconds until the short-lived access token will expire
+	RefreshToken string         `json:"refresh_token"` // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work.
+	TokenType    string         `json:"token_type"`    // Bearer
+	Athlete      SummaryAthlete `json:"athlete"`       // A summary of the athlete information
+	Scopes       []string       // Current Scopes the users agreed on. Not part of the JSON payload sent by Strava
+}
 
-	if code == "" {
-		return nil, InvalidCodeError
+func (oauth *StravaOAuth) Exchange(code string, scopes []string) (*StravaOAuthResponse, error) {
+	formData := url.Values{
+		"client_id":     {oauth.ClientID},
+		"client_secret": {oauth.ClientSecret},
+		"code":          {code},
+		"grant_type":    {"authorization_code"},
 	}
 
-	var response StravaOAuthResponse
-	err := oauth.postForm(context.Background(), "", endpoints.Token, url.Values{
-		"client_id": { oauth.ClientID },
-		"client_secret": { oauth.ClientSecret },
-		"code": { code },
-		"grant_type": { "authorization_code" },
-	}, &response)
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s?%s", endpoints.Token, formData.Encode()), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &response, nil
-}
+	req.Header.Add("Content-Type", "application/x-www-form-url-encoded")
 
-func (oauth *StravaOAuth) RevokeAccess(access_token string) error {
-
-	err := oauth.postForm(context.Background(), "", endpoints.Unauthorize, url.Values{
-		"access_token": { access_token }}, nil)
+	var resp StravaOAuthResponse
+	err = oauth.client.do(req, &resp)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	if len(scopes) == 0 {
+		resp.Scopes = scopes
+	}
+
+	
+	return &resp, nil
 }
 
-// Handles generating a new set of access and refresh tokens based on a previous refresh token.
-func (oauth *StravaOAuth) Refresh(refreshToken string) (*RefreshTokenResponse, error) {
+type refreshTokenPayload struct {
+	RefreshToken string `json:"refresh_token"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	GrantType    string `json:"grant_type"`
+}
 
-	payload, err := json.Marshal(RefreshTokenPayload{
-		ClientID: oauth.ClientID,
+type RefreshTokenResponse struct {
+	AccessToken  string `json:"access_token"`  // The short-lived access token
+	RefreshToken string `json:"refresh_token"` // The number of seconds since the epoch when the provided access token will expire
+	ExpiresAt    uint64 `json:"expires_at"`    // Seconds until the short-lived access token will expire
+	ExpiresIn    int    `json:"expires_in"`    // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work.
+}
+
+func (oauth *StravaOAuth) Refresh(refreshToken string) (*RefreshTokenResponse, error) {
+	buf, err := json.Marshal(refreshTokenPayload{
+		ClientID:     oauth.ClientID,
 		ClientSecret: oauth.ClientSecret,
 		RefreshToken: refreshToken,
-		GrantType: "refresh_token",
+		GrantType:    "refresh_token",
 	})
 	if err != nil {
 		return nil, err
 	}
 
-
-	resp, err := oauth.client.Post(endpoints.Token, "application/json", bytes.NewReader(payload))
+	req, err := http.NewRequest(http.MethodPost, endpoints.Token, bytes.NewBuffer(buf))
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	if err := handleBadResponse(resp); err != nil {
+	req.Header.Add("Content-Type", "application/json")
+
+	var resp RefreshTokenResponse
+	if err := oauth.client.do(req, resp); err != nil {
 		return nil, err
 	}
 
-	var response RefreshTokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, err
+	return &resp, nil
+}
+
+func (oauth *StravaOAuth) RevokeAccess(access_token string) error {
+	formData := url.Values{
+		"access_token": {access_token},
 	}
 
-	return &response, nil
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s?%s", endpoints.Unauthorize, formData.Encode()), nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Content-Type", "application/x-www-form-url-encoded")
+
+	return oauth.client.do(req, nil)
 }
 
 func (oauth *StravaOAuth) HandlerFunc(
 	handleSuccess func(tokens *StravaOAuthResponse, w http.ResponseWriter, r *http.Request),
-	handleError func(err error, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
-
+	handleError func(err error, w http.ResponseWriter, r *http.Request),
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		params := r.URL.Query()
-		if errParam := params.Get("error"); errParam == "access_denied" {
-			handleError(AccessDeniedError, w, r)
+
+		errParam := params.Get("error")
+
+		if errParam == "access_denied" {
+			handleError(&StravaOAuthError{}, w, r)
 			return
 		}
 
-		tokens, err := oauth.Exchange(r.URL.Query().Get("code"))
+		tokens, err := oauth.Exchange(params.Get("code"), strings.Split(params.Get("scope"), ","))
 		if err != nil {
 			handleError(err, w, r)
-			return
 		}
-
-		tokens.withScopes(params.Get("scope"))
 
 		handleSuccess(tokens, w, r)
 	}
