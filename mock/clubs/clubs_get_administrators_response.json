@@ -1,0 +1,14 @@
+[ 
+  {
+    "resource_state" : 2,
+    "firstname" : "Peter",
+    "lastname" : "S."
+  },
+  {
+    "resource_state": 1,
+    "firstname": "John",
+    "lastname": "Doe"
+  }
+]
+  
+  

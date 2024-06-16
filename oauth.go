@@ -1,9 +1,6 @@
 package gostrava
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -22,7 +19,7 @@ var endpoints = struct {
 // Defines the level of access or permission that the application requests from
 // and user's Strava Account when the user authorizes the application. Determines
 // what actions the application can perform on behalf of the user and what data it can access.
-var StravaOAuthScopes = struct {
+var StravaScopes = struct {
 	Read            string
 	ReadAll         string
 	ProfileReadAll  string
@@ -40,32 +37,24 @@ var StravaOAuthScopes = struct {
 	"activity:write",
 }
 
-type StravaOAuthOpts struct {
+type OAuthOpts struct {
 	ClientID     string // The application’s ID, obtained during registration.
 	ClientSecret string // The application’s secret, obtained during registration.
-	HTTPClient   HTTPClient
+	HttpClient   *http.Client
 	CallbackURL  string
 	Scopes       []string
 }
 
-type StravaOAuth struct {
-	StravaOAuthOpts
+type OAuth struct {
+	OAuthOpts
 
-	client *StravaClient
+	client *Client
 }
 
-func NewStravaOAuth(opts StravaOAuthOpts) *StravaOAuth {
-	clientOpts := StravaClientOpts{
-		HttpClient: opts.HTTPClient,
-	}
-
-	if opts.Scopes == nil || len(opts.Scopes) == 0 {
-		opts.Scopes = []string{StravaOAuthScopes.Read}
-	}
-
-	return &StravaOAuth{
-		StravaOAuthOpts: opts,
-		client:          NewStravaClient(clientOpts),
+func NewStravaOAuth(opts OAuthOpts) *OAuth {
+	return &OAuth{
+		OAuthOpts: opts,
+		client:    NewClient(opts.HttpClient),
 	}
 }
 
@@ -76,18 +65,30 @@ func NewStravaOAuth(opts StravaOAuthOpts) *StravaOAuth {
 //   - state: Returned in the redirect URI. Useful if the authentication is done from various points in an app.
 //
 // Returns the auth code url the user should be redirected to.
-func (oauth *StravaOAuth) GenerateAuthCodeURL(force bool, state string) string {
-	url := fmt.Sprintf("%s?response_type=code&client_id=%s&client_secret=%s&redirect_uri=%s&scope=%s", endpoints.Auth, oauth.ClientID, oauth.ClientSecret, oauth.CallbackURL, strings.Join(oauth.Scopes, ","))
+func (oauth *OAuth) MakeAuthCodeURL(force bool, state string) string {
+	authCodeUrl, err := url.Parse(endpoints.Auth)
+	if err != nil {
+		return ""
+	}
+
+	query := authCodeUrl.Query()
+	query.Set("response_type", "code")
+	query.Set("client_id", oauth.ClientID)
+	query.Set("client_secret", oauth.ClientSecret)
+	query.Set("redirect_uri", oauth.CallbackURL)
+	query.Set("scope", strings.Join(oauth.Scopes, ","))
 
 	if force {
-		url = fmt.Sprintf("%s&approval_prompt=force", url)
+		query.Set("approval_prompt", "force")
 	}
 
-	if len(state) > 0 {
-		url = fmt.Sprintf("%s&state=%s", url, state)
+	if state != "" {
+		query.Set("state", state)
 	}
 
-	return url
+	authCodeUrl.RawQuery = query.Encode()
+
+	return authCodeUrl.String()
 }
 
 type StravaOAuthResponse struct {
@@ -100,40 +101,38 @@ type StravaOAuthResponse struct {
 	Scopes       []string       // Current Scopes the users agreed on. Not part of the JSON payload sent by Strava
 }
 
-func (oauth *StravaOAuth) Exchange(code string, scopes []string) (*StravaOAuthResponse, error) {
+func (oauth *OAuth) Exchange(code string, scopes []string) (*StravaOAuthResponse, error) {
 	formData := url.Values{
 		"client_id":     {oauth.ClientID},
 		"client_secret": {oauth.ClientSecret},
 		"code":          {code},
 		"grant_type":    {"authorization_code"},
 	}
-
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s?%s", endpoints.Token, formData.Encode()), nil)
+	url, err := url.Parse(endpoints.Token)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("Content-Type", "application/x-www-form-url-encoded")
-
-	var resp StravaOAuthResponse
-	err = oauth.client.do(req, &resp)
+	req, err := oauth.client.newRequest(newStravaRequestOpts{
+		url:    url,
+		body:   formData,
+		method: http.MethodPost,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(scopes) == 0 {
+	resp := &StravaOAuthResponse{}
+	err = oauth.client.do(req, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(scopes) != 0 {
 		resp.Scopes = scopes
 	}
 
-	
-	return &resp, nil
-}
-
-type refreshTokenPayload struct {
-	RefreshToken string `json:"refresh_token"`
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	GrantType    string `json:"grant_type"`
+	return resp, nil
 }
 
 type RefreshTokenResponse struct {
@@ -143,48 +142,57 @@ type RefreshTokenResponse struct {
 	ExpiresIn    int    `json:"expires_in"`    // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work.
 }
 
-func (oauth *StravaOAuth) Refresh(refreshToken string) (*RefreshTokenResponse, error) {
-	buf, err := json.Marshal(refreshTokenPayload{
-		ClientID:     oauth.ClientID,
-		ClientSecret: oauth.ClientSecret,
-		RefreshToken: refreshToken,
-		GrantType:    "refresh_token",
+func (oauth *OAuth) Refresh(refreshToken string) (*RefreshTokenResponse, error) {
+	formData := url.Values{
+		"client_id":     {oauth.ClientID},
+		"client_secret": {oauth.ClientSecret},
+		"refresh_token": {refreshToken},
+		"grant_type":    {"refresh_token"},
+	}
+
+	url, err := url.Parse(endpoints.Token)
+	if err != nil {
+		return nil, err
+	}
+	req, err := oauth.client.newRequest(newStravaRequestOpts{
+		url:    url,
+		method: http.MethodPost,
+		body:   formData,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, endpoints.Token, bytes.NewBuffer(buf))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-
-	var resp RefreshTokenResponse
+	resp := &RefreshTokenResponse{}
 	if err := oauth.client.do(req, resp); err != nil {
 		return nil, err
 	}
 
-	return &resp, nil
+	return resp, nil
 }
 
-func (oauth *StravaOAuth) RevokeAccess(access_token string) error {
+func (oauth *OAuth) RevokeAccess(access_token string) error {
 	formData := url.Values{
 		"access_token": {access_token},
 	}
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s?%s", endpoints.Unauthorize, formData.Encode()), nil)
+	url, err := url.Parse(endpoints.Unauthorize)
+	if err != nil {
+		return err
+	}
+	req, err := oauth.client.newRequest(newStravaRequestOpts{
+		url:    url,
+		method: http.MethodPost,
+		body:   formData,
+	})
 	if err != nil {
 		return err
 	}
 
-	req.Header.Add("Content-Type", "application/x-www-form-url-encoded")
-
 	return oauth.client.do(req, nil)
 }
 
-func (oauth *StravaOAuth) HandlerFunc(
+func (oauth *OAuth) HandlerFunc(
 	handleSuccess func(tokens *StravaOAuthResponse, w http.ResponseWriter, r *http.Request),
 	handleError func(err error, w http.ResponseWriter, r *http.Request),
 ) http.HandlerFunc {

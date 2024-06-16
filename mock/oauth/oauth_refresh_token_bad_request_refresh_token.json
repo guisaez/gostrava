@@ -1,0 +1,10 @@
+{
+    "message": "Bad Request",
+    "errors": [
+        {
+            "resource": "Application",
+            "field": "refresh_token",
+            "code": "invalid"
+        }
+    ]
+}

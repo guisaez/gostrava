@@ -19,12 +19,10 @@ func NewTestingClient(fn RoundTripFunc) *http.Client {
 
 func TestNewStravaClient(t *testing.T) {
 
-	opts := StravaClientOpts{}
+	strava := NewClient(nil)
 
-	client := NewStravaClient(opts)
-
-	if client.HttpClient != http.DefaultClient {
-		t.Errorf("expected HTTPClient to be automatically define if its not provided")
+	if strava.client!= http.DefaultClient {
+		t.Errorf("expected HTTPClient to be automatically defined if its not provided")
 	}
 }
 
