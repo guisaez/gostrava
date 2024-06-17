@@ -1,11 +1,64 @@
 package gostrava
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
 )
+
+func registerClubResponders() {
+	httpmock.RegisterResponder("GET", "https://www.strava.com/api/v3/clubs/1",
+		func(req *http.Request) (*http.Response, error) {
+			if req.Header.Get("Authorization") == "" {
+				return httpmock.NewJsonResponse(http.StatusUnauthorized, httpmock.File("./mock/api_error_response.json"))
+			}
+
+			return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/clubs/get_club_response.json"))
+		},
+	)
+
+	httpmock.RegisterResponder("GET", "https://www.strava.com/api/v3/clubs/1/admins",
+		func(req *http.Request) (*http.Response, error) {
+			if req.Header.Get("Authorization") == "" {
+				return httpmock.NewJsonResponse(http.StatusUnauthorized, httpmock.File("./mock/api_error_response.json"))
+			}
+
+			return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/clubs/list_club_administrators_response.json"))
+		},
+	)
+
+	httpmock.RegisterResponder("GET", "https://www.strava.com/api/v3/clubs/1/activities",
+		func(req *http.Request) (*http.Response, error) {
+			if req.Header.Get("Authorization") == "" {
+				return httpmock.NewJsonResponse(http.StatusUnauthorized, httpmock.File("./mock/api_error_response.json"))
+			}
+
+			return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/clubs/list_club_activities_response.json"))
+		},
+	)
+
+	httpmock.RegisterResponder("GET", "https://www.strava.com/api/v3/clubs/1/members",
+		func(req *http.Request) (*http.Response, error) {
+			if req.Header.Get("Authorization") == "" {
+				return httpmock.NewJsonResponse(http.StatusUnauthorized, httpmock.File("./mock/api_error_response.json"))
+			}
+
+			return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/clubs/list_club_members_response.json"))
+		},
+	)
+
+	httpmock.RegisterResponder("GET", "https://www.strava.com/api/v3/athlete/clubs",
+		func(req *http.Request) (*http.Response, error) {
+			if req.Header.Get("Authorization") == "" {
+				return httpmock.NewJsonResponse(http.StatusUnauthorized, httpmock.File("./mock/api_error_response.json"))
+			}
+
+			return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/clubs/list_athlete_clubs_response.json"))
+		})
+}
 
 func TestGetClubById(t *testing.T) {
 	httpmock.Activate()
@@ -39,13 +92,13 @@ func TestGetAdministrators(t *testing.T) {
 		t.Error("expected and error")
 	}
 
-	_, err = strava.Clubs.GetAdministrators("12345", 1, &ClubRequestParams{})
+	_, err = strava.Clubs.ListClubAdministrators("12345", 1, &RequestParams{})
 	if err != nil {
 		t.Errorf("error not expected, got %v", err.Error())
 	}
 }
 
-func TestGetActivities(t *testing.T) {
+func TestGetClubActivities(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -58,7 +111,7 @@ func TestGetActivities(t *testing.T) {
 		t.Error("expected and error")
 	}
 
-	_, err = strava.Clubs.GetActivities("12345", 1, &ClubRequestParams{})
+	_, err = strava.Clubs.ListClubActivities("12345", 1, &RequestParams{})
 	if err != nil {
 		t.Errorf("error not expected, got %v", err.Error())
 	}
@@ -77,50 +130,26 @@ func TestGetMembers(t *testing.T) {
 		t.Error("expected and error")
 	}
 
-	_, err = strava.Clubs.GetMembers("12345", 1, &ClubRequestParams{Page: 1, PerPage: 2})
+	_, err = strava.Clubs.ListClubMembers("12345", 1, &RequestParams{Page: 1, PerPage: 2})
 	if err != nil {
 		t.Errorf("error not expected, got %v", err.Error())
 	}
 }
 
-func registerClubResponders() {
-	httpmock.RegisterResponder("GET", "https://www.strava.com/api/v3/clubs/1",
-		func(req *http.Request) (*http.Response, error) {
-			if req.Header.Get("Authorization") == "" {
-				return httpmock.NewJsonResponse(http.StatusUnauthorized, httpmock.File("./mock/api_error_response.json"))
-			}
+func TestListAthleteClubs(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
 
-			return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/clubs/clubs_get_by_id_response.json"))
-		},
-	)
+	registerClubResponders()
 
-	httpmock.RegisterResponder("GET", "https://www.strava.com/api/v3/clubs/1/admins",
-		func(req *http.Request) (*http.Response, error) {
-			if req.Header.Get("Authorization") == "" {
-				return httpmock.NewJsonResponse(http.StatusUnauthorized, httpmock.File("./mock/api_error_response.json"))
-			}
+	strava := NewClient(nil)
 
-			return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/clubs/clubs_get_administrators_response.json"))
-		},
-	)
+	resp, err := strava.Clubs.ListAthleteClubs("123456", nil)
+	if err != nil {
+		t.Errorf("error not expected, got %v", err.Error())
+	}
 
-	httpmock.RegisterResponder("GET", "https://www.strava.com/api/v3/clubs/1/activities",
-		func(req *http.Request) (*http.Response, error) {
-			if req.Header.Get("Authorization") == "" {
-				return httpmock.NewJsonResponse(http.StatusUnauthorized, httpmock.File("./mock/api_error_response.json"))
-			}
+	json, _ := json.MarshalIndent(resp, "", "\t")
 
-			return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/clubs/clubs_get_activities_response.json"))
-		},
-	)
-
-	httpmock.RegisterResponder("GET", "https://www.strava.com/api/v3/clubs/1/members",
-		func(req *http.Request) (*http.Response, error) {
-			if req.Header.Get("Authorization") == "" {
-				return httpmock.NewJsonResponse(http.StatusUnauthorized, httpmock.File("./mock/api_error_response.json"))
-			}
-
-			return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/clubs/clubs_get_members_response.json"))
-		},
-	)
+	fmt.Println(string(json))
 }

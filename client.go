@@ -11,6 +11,18 @@ import (
 
 var defaultBaseURL string = "https://www.strava.com/api/v3"
 
+const (
+	activitiesPath     = "activities"
+	athletePath        = "athlete"
+	athletesPath       = "athletes"
+	clubsPath          = "clubs"
+	gearPath           = "gear"
+	routesPath         = "routes"
+	segmentEffortsPath = "segment_efforts"
+	streamPath         = "streams"
+	uploadsPath        = "uploads"
+)
+
 type Client struct {
 	// HTTP client used to communicate with API
 	client *http.Client
@@ -19,14 +31,18 @@ type Client struct {
 	BaseURL *url.URL
 
 	// Clubs API service
-	Clubs ClubsAPIService
+	Activities ActivitiesAPIService
+	Athletes   AthleteAPIService
+	Clubs      ClubsAPIService
+	Gears      GearsAPIService
+	Routes     RoutesAPIService
 }
 
 type apiService struct {
 	client *Client
 }
 
-type generalParams struct {
+type RequestParams struct {
 	Page    int // Page number. Defaults to 1
 	PerPage int // Number of items per page. Defaults to 30
 }
@@ -42,8 +58,11 @@ func NewClient(httpClient *http.Client) *Client {
 		client:  httpClient,
 		BaseURL: baseURL,
 	}
-
+	c.Activities = ActivitiesAPIService{c}
+	c.Athletes = AthleteAPIService{c}
 	c.Clubs = ClubsAPIService{c}
+	c.Gears = GearsAPIService{c}
+	c.Routes = RoutesAPIService{c}
 
 	return c
 }
@@ -75,7 +94,7 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 	return nil
 }
 
-type newStravaRequestOpts struct {
+type clientRequestOpts struct {
 	// HTTP Method
 	method string
 
@@ -92,7 +111,7 @@ type newStravaRequestOpts struct {
 	ctx context.Context
 }
 
-func (c *Client) newRequest(opts newStravaRequestOpts) (*http.Request, error) {
+func (c *Client) newRequest(opts clientRequestOpts) (*http.Request, error) {
 	if opts.method == "" {
 		opts.method = http.MethodGet
 	}
@@ -127,7 +146,13 @@ func (c *Client) newRequest(opts newStravaRequestOpts) (*http.Request, error) {
 				return nil, err
 			}
 		}
-	} else {
+	} else { // GET Request, url values are appended to the query
+		if opts.body != nil {
+			if p, ok := opts.body.(url.Values); ok {
+				opts.url.RawQuery = p.Encode()
+			}
+		}
+
 		req, err = http.NewRequestWithContext(opts.ctx, opts.method, opts.url.String(), nil)
 		if err != nil {
 			return nil, err
@@ -136,38 +161,6 @@ func (c *Client) newRequest(opts newStravaRequestOpts) (*http.Request, error) {
 
 	if opts.access_token != "" {
 		req.Header.Set("Authorization", "Bearer "+opts.access_token)
-	}
-
-	return req, nil
-}
-
-func (c *Client) get(url *url.URL, formData url.Values, access_token string) (*http.Request, error) {
-	if formData != nil {
-		url.RawQuery = formData.Encode()
-	}
-
-	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if access_token != "" {
-		req.Header.Set("Authorization", "Bearer "+access_token)
-	}
-
-	return req, nil
-}
-
-func (c *Client) postForm(url *url.URL, formData url.Values, access_token string) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodPost, url.String(), strings.NewReader(formData.Encode()))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", "application/x-www-form-url-encoded")
-
-	if access_token != "" {
-		req.Header.Set("Authorization", "Bearer "+access_token)
 	}
 
 	return req, nil

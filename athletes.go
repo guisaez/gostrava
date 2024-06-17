@@ -1,24 +1,26 @@
 package gostrava
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+	"net/url"
+)
 
 type AthleteAPIService apiService
 
-const (
-	athletePath = "/athlete"
-)
-
 // Returns the currently authenticated athlete. Tokens with profile:read_all scope will receive
 // a detailed athlete representation; all others will receive a SummaryAthlete representation
-func (s *AthleteAPIService) CurrentAthlete(access_token string) (*DetailedAthlete, error) {
+func (s *AthleteAPIService) GetAuthenticatedAthlete(access_token string) (*DetailedAthlete, error) {
 	requestUrl := s.client.BaseURL.JoinPath(athletePath)
 
-	req, err := s.client.get(requestUrl, nil, access_token)
+	req, err := s.client.newRequest(clientRequestOpts{
+		url:          requestUrl,
+		method:       http.MethodGet,
+		access_token: access_token,
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Add("Authorization", "Bearer "+access_token)
 
 	resp := &DetailedAthlete{}
 	if err := s.client.do(req, resp); err != nil {
@@ -29,16 +31,20 @@ func (s *AthleteAPIService) CurrentAthlete(access_token string) (*DetailedAthlet
 }
 
 // Returns the authenticated athlete's heart rate and power zones. Requires profile:read_all.
-func (s *AthleteAPIService) GetZones(access_token string) (*Zones, error) {
-	requestUrl := s.client.BaseURL.JoinPath(athletePath, "/zones")
+func (s *AthleteAPIService) GetZones(access_token string) ([]ActivityZone, error) {
+	requestUrl := s.client.BaseURL.JoinPath(athletePath, "zones")
 
-	req, err := s.client.get(requestUrl, nil, access_token)
+	req, err := s.client.newRequest(clientRequestOpts{
+		url:          requestUrl,
+		method:       http.MethodGet,
+		access_token: access_token,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	resp := &Zones{}
-	if err := s.client.do(req, resp); err != nil {
+	resp := []ActivityZone{}
+	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -47,9 +53,13 @@ func (s *AthleteAPIService) GetZones(access_token string) (*Zones, error) {
 
 // Returns the activity stats of an athlete. Only includes data from activities set to Everyone's visibility.
 func (s *AthleteAPIService) GetAthleteStats(access_token string, id int64) (*ActivityStats, error) {
-	requestUrl := s.client.BaseURL.JoinPath(athletePath, fmt.Sprint(id), "stats")
+	requestUrl := s.client.BaseURL.JoinPath(athletesPath, fmt.Sprint(id), "stats")
 
-	req, err := s.client.get(requestUrl, nil, access_token)
+	req, err := s.client.newRequest(clientRequestOpts{
+		url:          requestUrl,
+		method:       http.MethodGet,
+		access_token: access_token,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -62,35 +72,32 @@ func (s *AthleteAPIService) GetAthleteStats(access_token string, id int64) (*Act
 	return resp, nil
 }
 
-// Return a list of the clubs whose membership includes the authenticated athlete.
-func (s *AthleteAPIService) ListClubs(access_token string) ([]SummaryClub, error) {
-	requestUrl := s.client.BaseURL.JoinPath(athletePath, "clubs")
-
-	req, err := s.client.get(requestUrl, nil, access_token)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := []SummaryClub{}
-	if err := s.client.do(req, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+type UpdateAthletePayload struct {
+	Weight float64 // The weigh of the athlete in kilograms.
 }
 
-// Returns a list of the routes created by the authenticated athlete. Private routes are filtered out
-// unless request by a token with read_all scope.
-func (s *AthleteAPIService) ListRoutes(access_token string) ([]Route, error) {
-	requestUrl := s.client.BaseURL.JoinPath(athletePath, "routes")
+// Update the currently authenticated athlete. Requires profile:write scope.
+func (s *AthleteAPIService) UpdateAthlete(access_token string, p UpdateAthletePayload) (*DetailedAthlete, error) {
+	requestUrl := s.client.BaseURL.JoinPath(athletePath)
 
-	req, err := s.client.get(requestUrl, nil, access_token)
+	params := url.Values{}
+
+	if p.Weight > 0 {
+		params.Set("weight", fmt.Sprintf("%.2f", p.Weight))
+	}
+
+	req, err := s.client.newRequest(clientRequestOpts{
+		url:          requestUrl,
+		method:       http.MethodPut,
+		access_token: access_token,
+		body:         params,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	resp := []Route{}
-	if err := s.client.do(req, &resp); err != nil {
+	resp := &DetailedAthlete{}
+	if err := s.client.do(req, resp); err != nil {
 		return nil, err
 	}
 

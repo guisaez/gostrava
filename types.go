@@ -1,6 +1,9 @@
 package gostrava
 
-import "time"
+import (
+	"math/big"
+	"time"
+)
 
 type DateTime string
 
@@ -178,8 +181,8 @@ var ClubSportTypes = struct {
 }
 
 type Comment struct {
-	ID         int64          `json:"id"`          // The unique identifier of this comment
-	ActivityID int64          `json:"activity_id"` // The identifier of the activity this comment is related to
+	ID         big.Int        `json:"id"`          // The unique identifier of this comment
+	ActivityID big.Int        `json:"activity_id"` // The identifier of the activity this comment is related to
 	Text       string         `json:"text"`        // The content of the comment
 	Athlete    SummaryAthlete `json:"athlete"`     // An instance of SummaryAthlete.
 	CreatedAt  DateTime       `json:"created_at"`  // The time at which this comment was created.
@@ -194,8 +197,8 @@ type DetailedActivity struct {
 	SegmentEfforts []DetailedSegmentEffort `json:"segment_efforts"` // A collection of DetailedSegmentEffort objects.
 	DeviceName     string                  `json:"device_name"`     // The name of the device used to record the activity
 	EmbedToken     string                  `json:"embed_token"`     // The token used to embed a Strava activity
-	SplitsMetric   Split                   `json:"splits_metric"`   // The splits of this activity in metric units (for runs)
-	SplitsStandard Split                   `json:"splits_standard"` // The splits of this activity in imperial units (for runs)
+	SplitsMetric   []Split                 `json:"splits_metric"`   // The splits of this activity in metric units (for runs)
+	SplitsStandard []Split                 `json:"splits_standard"` // The splits of this activity in imperial units (for runs)
 	Laps           []Lap                   `json:"laps"`            // A collection of Lap objects.
 	BestEfforts    []DetailedSegmentEffort `json:"best_efforts"`    // A collection of DetailedSegmentEffort objects.
 }
@@ -224,7 +227,7 @@ type DetailedGear struct {
 	SummaryGear
 	BrandName   string `json:"brand_name"`  // The gear's brand name.
 	ModelName   string `json:"model_name"`  // The gear's model name.
-	FrameType   string `json:"frame_type"`  // The gear's frame type (bike only).
+	FrameType   int    `json:"frame_type"`  // The gear's frame type (bike only).
 	Description string `json:"description"` // The gear's description.
 }
 
@@ -268,7 +271,7 @@ type ExplorerResponse struct {
 }
 
 type ExplorerSegment struct {
-	ID                int64   `json:"id"`                  // The unique identifier of this segment
+	ID                big.Int `json:"id"`                  // The unique identifier of this segment
 	Name              string  `json:"name"`                // The name of this segment
 	ClimbCategory     uint8   `json:"climb_category"`      // The category of the climb [0, 5]. Higher is harder ie. 5 is Hors catégorie, 0 is uncategorized in climb_category. If climb_category = 5, climb_category_desc = HC. If climb_category = 2, climb_category_desc = 3.
 	ClimbCategoryDesc string  `json:"climb_category_desc"` // The description for the category of the climb May take one of the following values: NC, 4, 3, 2, 1, HC
@@ -328,15 +331,15 @@ var Measurements = struct {
 }
 
 type MetaActivity struct {
-	ID int64 `json:"id"` // The unique identifier of the activity
+	ID big.Int `json:"id"` // The unique identifier of the activity
 }
 
 type MetaAthlete struct {
-	ID int64 `json:"id"` // The unique identifier of the athlete
+	ID big.Int `json:"id"` // The unique identifier of the athlete
 }
 
 type MetaClub struct {
-	ID            int64         `json:"id"`            // The club's unique identifier.
+	ID            big.Int       `json:"id"`            // The club's unique identifier.
 	ResourceState ResourceState `json:"resource_sate"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
 	Name          string        `json:"name"`          // The club's name.
 }
@@ -352,10 +355,10 @@ type PhotosSummary struct {
 }
 
 type PhotosSummaryPrimary struct {
-	ID       int64  `json:"id"`
-	Source   int    `json:"source"`
-	UniqueID string `json:"unique_id"`
-	Urls     string `json:"string"`
+	ID       big.Int `json:"id"`
+	Source   int     `json:"source"`
+	UniqueID string  `json:"unique_id"`
+	Urls     string  `json:"string"`
 }
 
 type PolylineMap struct {
@@ -384,24 +387,24 @@ var ResourceStates = struct {
 }
 
 type Route struct {
-	Athlete             SummaryAthlete `json:"athlete"`               // An instance of SummaryAthlete.
-	Description         string         `json:"description"`           // The description of the route
-	Distance            float32        `json:"distance"`              // The route's distance, in meters
-	ElevationGain       float32        `json:"elevation_gain"`        // The route's elevation gain.
-	ID                  int64          `json:"id"`                    // The unique identifier of this route
-	IdStr               string         `json:"id_str"`                // The unique identifier of the route in string format
-	Map                 PolylineMap    `json:"map"`                   // An instance of PolylineMap.
-	Name                string         `json:"name"`                  // The name of this route
-	Private             bool           `json:"private"`               // Whether this route is private
-	Starred             bool           `json:"starred"`               // Whether this route is starred by the logged-in athlete
-	Timestamp           int64          `json:"timestamp"`             // An epoch timestamp of when the route was created
-	Type                RouteType      `json:"type"`                  // This route's type RouteTypes.Ride, RouteTypes.Run
-	SubType             SubRouteType   `json:"sub_type"`              // This route's sub-type (SubRouteTypes.Road, SubRouteTypes.MountainBike, SubRouteTypes.Cross, SubRouteTypes.Trail, SubRouteTypes.Mixed)
-	CreatedAt           DateTime       `json:"created_at"`            // The time at which the route was created
-	UpdatedAt           DateTime       `json:"updated_at"`            // The time at which the route was last updated
-	EstimatedMovingTime int            `json:"estimated_moving_time"` // Estimated time in seconds for the authenticated athlete to complete route
-	Segments            SummarySegment `json:"segments"`              // The segments traversed by this route
-	Waypoints           Waypoint       `json:"waypoints"`             // The custom waypoints along this route
+	Athlete             SummaryAthlete   `json:"athlete"`               // An instance of SummaryAthlete.
+	Description         string           `json:"description"`           // The description of the route
+	Distance            float32          `json:"distance"`              // The route's distance, in meters
+	ElevationGain       float32          `json:"elevation_gain"`        // The route's elevation gain.
+	ID                  big.Int          `json:"id"`                    // The unique identifier of this route
+	IdStr               string           `json:"id_str"`                // The unique identifier of the route in string format
+	Map                 PolylineMap      `json:"map"`                   // An instance of PolylineMap.
+	Name                string           `json:"name"`                  // The name of this route
+	Private             bool             `json:"private"`               // Whether this route is private
+	Starred             bool             `json:"starred"`               // Whether this route is starred by the logged-in athlete
+	Timestamp           int64            `json:"timestamp"`             // An epoch timestamp of when the route was created
+	Type                RouteType        `json:"type"`                  // This route's type RouteTypes.Ride, RouteTypes.Run
+	SubType             SubRouteType     `json:"sub_type"`              // This route's sub-type (SubRouteTypes.Road, SubRouteTypes.MountainBike, SubRouteTypes.Cross, SubRouteTypes.Trail, SubRouteTypes.Mixed)
+	CreatedAt           DateTime         `json:"created_at"`            // The time at which the route was created
+	UpdatedAt           DateTime         `json:"updated_at"`            // The time at which the route was last updated
+	EstimatedMovingTime int              `json:"estimated_moving_time"` // Estimated time in seconds for the authenticated athlete to complete route
+	Segments            []SummarySegment `json:"segments"`              // The segments traversed by this route
+	Waypoints           []Waypoint       `json:"waypoints"`             // The custom waypoints along this route
 }
 
 type RouteType int8
@@ -533,7 +536,7 @@ var SubRouteTypes = struct {
 type SummaryActivity struct {
 	MetaActivity
 	ExternalID         string       `json:"external_id"`            // The identifier provided at upload time
-	UploadID           int64        `json:"upload_id"`              // The identifier of the upload that resulted in this activity
+	UploadID           big.Int      `json:"upload_id"`              // The identifier of the upload that resulted in this activity
 	Athlete            MetaAthlete  `json:"athlete"`                // An instance of MetaAthlete.
 	Name               string       `json:"name"`                   // The name of the activity
 	Distance           float32      `json:"distance"`               // The activity's distance, in meters
@@ -625,7 +628,7 @@ type SummaryPRSegmentEffort struct {
 }
 
 type SummarySegment struct {
-	ID                  int64                  `json:"id"`                     // The unique identifier of this segment
+	ID                  big.Int                `json:"id"`                     // The unique identifier of this segment
 	Name                string                 `json:"name"`                   // The name of this segment
 	ActivityType        SegmentActivityType    `json:"activity_type"`          // May take one of the following values: SegmentActivityTypes.Ride, SegmentActivityTypes.Run
 	Distance            float32                `json:"distance"`               // The segment's distance, in meters
@@ -645,7 +648,7 @@ type SummarySegment struct {
 }
 
 type SummarySegmentEffort struct {
-	ID             int64    `json:"id"`               // The unique identifier of this effort
+	ID             big.Int  `json:"id"`               // The unique identifier of this effort
 	ActivityID     int64    `json:"activity_id"`      // The unique identifier of the activity related to this effort
 	ElapsedTime    int      `json:"elapsed_time"`     // The effort's elapsed time
 	StartDate      DateTime `json:"start_date"`       // The time at which the effort was started.
@@ -674,33 +677,22 @@ type TimedZoneRange struct {
 	Time int `json:"time"` // The number of seconds spent in this zone
 }
 
-type UpdatableActivity struct {
-	Commute      bool         `json:"commute"`        // Whether this activity is a commute
-	Trainer      bool         `json:"trainer"`        // Whether this activity was recorded on a training machine
-	HideFromHome bool         `json:"hide_from_home"` // Whether this activity is muted
-	Description  string       `json:"description"`    // The description of the activity
-	Name         string       `json:"name"`           // The name of the activity
-	Type         ActivityType `json:"type"`           // Deprecated. Prefer to use sport_type. In a request where both type and sport_type are present, this field will be ignored
-	SportType    SportType    `json:"sport_type"`     // An instance of SportType.
-	GearID       string       `json:"gear_id"`        // Identifier for the gear associated with the activity. ‘none’ clears gear from activity
-}
-
 type Upload struct {
-	ID         int64  `json:"id"`          // The unique identifier of the upload
-	IdSrt      string `json:"id_str"`      // The unique identifier of the upload in string format
-	ExternalID string `json:"external_id"` // The external identifier of the upload
-	Error      string `json:"error"`       // The error associated with this upload
-	Status     string `json:"string"`      // The status of this upload
-	ActivityID int64  `json:"activity_id"` // The identifier of the activity this upload resulted into
+	ID         big.Int `json:"id"`          // The unique identifier of the upload
+	IdSrt      string  `json:"id_str"`      // The unique identifier of the upload in string format
+	ExternalID string  `json:"external_id"` // The external identifier of the upload
+	Error      string  `json:"error"`       // The error associated with this upload
+	Status     string  `json:"string"`      // The status of this upload
+	ActivityID int64   `json:"activity_id"` // The identifier of the activity this upload resulted into
 }
 
 type Waypoint struct {
-	LatLng            LatLng `json:"latlng"`              // The location along the route that the waypoint is closest to
-	TargetLatLng      LatLng `json:"target_latlng"`       // A location off of the route that the waypoint is (optional)
-	Categories        string `json:"categories"`          // Categories that the waypoint belongs to
-	Title             string `json:"string"`              // A title for the waypoint
-	Description       string `json:"description"`         // A description of the waypoint (optional)
-	DistanceIntoRoute int    `json:"distance_into_route"` // The number meters along the route that the waypoint is located
+	LatLng            LatLng   `json:"latlng"`              // The location along the route that the waypoint is closest to
+	TargetLatLng      LatLng   `json:"target_latlng"`       // A location off of the route that the waypoint is (optional)
+	Categories        []string `json:"categories"`          // Categories that the waypoint belongs to
+	Title             string   `json:"string"`              // A title for the waypoint
+	Description       string   `json:"description"`         // A description of the waypoint (optional)
+	DistanceIntoRoute int      `json:"distance_into_route"` // The number meters along the route that the waypoint is located
 }
 
 type ZoneRange struct {

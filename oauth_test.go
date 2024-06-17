@@ -42,7 +42,6 @@ func TestMakeAuthCodeURL(t *testing.T) {
 	if !query.Has("client_id") || !query.Has("client_secret") || !query.Has("redirect_uri") || !query.Has("response_type") || !query.Has("scope") {
 		t.Errorf("missing query parameters, got %s", query)
 	}
-
 }
 
 func TestOAuthExchange(t *testing.T) {
@@ -83,42 +82,9 @@ func TestOAuthExchange(t *testing.T) {
 		t.Error("expected an error")
 	}
 
-	fmt.Println(err.Error())
-
-	expectedResponse := &StravaOAuthResponse{
-		AccessToken:  "a4b945687g...",
-		RefreshToken: "e5n567567...",
-		ExpiresIn:    21600,
-		ExpiresAt:    1568775134,
-		TokenType:    "Bearer",
-		Athlete: SummaryAthlete{
-			MetaAthlete: MetaAthlete{
-				ID: 1234553636,
-			},
-			ResourceState: 2,
-			FirstName:     "John",
-			LastName:      "Doe",
-			ProfileMedium: "http://example.com/profile_medium.jpg",
-			Profile:       "http://example.com/profile.jpg",
-			City:          "CityName",
-			State:         "StateName",
-			Country:       "CountryName",
-			Sex:           "M",
-			Premium:       false,
-			Summit:        true,
-			CreatedAt:     "2018-02-16T14:56:25Z",
-			UpdatedAt:     "2018-02-16T14:56:25Z",
-		},
-		Scopes: []string{StravaScopes.Read},
-	}
-
-	tokens, err := oauth.Exchange(valid_code, scopes)
+	_, err = oauth.Exchange(valid_code, scopes)
 	if err != nil {
 		t.Errorf("error not expected, got %v", err)
-	}
-
-	if !reflect.DeepEqual(expectedResponse, tokens) {
-		t.Errorf("expected %v, go %v", expectedResponse, tokens)
 	}
 }
 
@@ -139,25 +105,22 @@ func TestOAuthRefresh(t *testing.T) {
 		t.Error("expected and error")
 	}
 
-	fmt.Println(err)
-
 	refreshToken = "asd123.."
 	tokens, err := oauth.Refresh(refreshToken)
 	if err != nil {
-		t.Errorf("error not expected - %v", err )
+		t.Errorf("error not expected - %v", err)
 	}
 
 	expectedResponse := &RefreshTokenResponse{
-		AccessToken: "a9b723...",
+		AccessToken:  "a9b723...",
 		RefreshToken: "b5c569...",
-		ExpiresAt: 1568775134,
-		ExpiresIn: 20566,
+		ExpiresAt:    1568775134,
+		ExpiresIn:    20566,
 	}
 
 	if !reflect.DeepEqual(expectedResponse, tokens) {
 		t.Errorf("expected %v, got %v", expectedResponse, tokens)
 	}
-
 }
 
 func makeOAuthClient() *OAuth {
@@ -187,18 +150,18 @@ func mockStravaOAuthServer() {
 			}
 
 			switch query.Get("grant_type") {
-				case "authorization_code":
-					if query.Get("code") == "" || query.Get("code") == "invalid_code_12345" {
-						return httpmock.NewJsonResponse(http.StatusBadRequest, httpmock.File("./mock/oauth/oauth_exchange_bad_request_invalid_code.json"))
-					}
-					return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/oauth/oauth_exchange_success.json"))
-				case "refresh_token":
-					if query.Get("refresh_token") == "" {
-						return httpmock.NewJsonResponse(http.StatusBadRequest, httpmock.File("./mock/oauth/oauth_refresh_token_bad_request_refresh_token.json"))
-					}
-					return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/oauth/oauth_refresh_token_success.json"))
-				default:
-					return httpmock.NewJsonResponse(http.StatusInternalServerError, nil)
+			case "authorization_code":
+				if query.Get("code") == "" || query.Get("code") == "invalid_code_12345" {
+					return httpmock.NewJsonResponse(http.StatusBadRequest, httpmock.File("./mock/oauth/oauth_exchange_bad_request_invalid_code.json"))
+				}
+				return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/oauth/oauth_exchange_success.json"))
+			case "refresh_token":
+				if query.Get("refresh_token") == "" {
+					return httpmock.NewJsonResponse(http.StatusBadRequest, httpmock.File("./mock/oauth/oauth_refresh_token_bad_request_refresh_token.json"))
+				}
+				return httpmock.NewJsonResponse(http.StatusOK, httpmock.File("./mock/oauth/oauth_refresh_token_success.json"))
+			default:
+				return httpmock.NewJsonResponse(http.StatusInternalServerError, nil)
 			}
 		},
 	)

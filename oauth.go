@@ -113,7 +113,7 @@ func (oauth *OAuth) Exchange(code string, scopes []string) (*StravaOAuthResponse
 		return nil, err
 	}
 
-	req, err := oauth.client.newRequest(newStravaRequestOpts{
+	req, err := oauth.client.newRequest(clientRequestOpts{
 		url:    url,
 		body:   formData,
 		method: http.MethodPost,
@@ -154,7 +154,7 @@ func (oauth *OAuth) Refresh(refreshToken string) (*RefreshTokenResponse, error) 
 	if err != nil {
 		return nil, err
 	}
-	req, err := oauth.client.newRequest(newStravaRequestOpts{
+	req, err := oauth.client.newRequest(clientRequestOpts{
 		url:    url,
 		method: http.MethodPost,
 		body:   formData,
@@ -180,7 +180,7 @@ func (oauth *OAuth) RevokeAccess(access_token string) error {
 	if err != nil {
 		return err
 	}
-	req, err := oauth.client.newRequest(newStravaRequestOpts{
+	req, err := oauth.client.newRequest(clientRequestOpts{
 		url:    url,
 		method: http.MethodPost,
 		body:   formData,

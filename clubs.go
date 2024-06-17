@@ -2,29 +2,28 @@ package gostrava
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 )
 
-const (
-	clubsPath = "/clubs"
-)
-
 type ClubsAPIService apiService
 
-type ClubRequestParams generalParams
-
 // Returns a given club using its identifier
-func (c *ClubsAPIService) GetById(access_token string, id int64) (*DetailedClub, error) {
-	requestUrl := c.client.BaseURL.JoinPath(clubsPath, fmt.Sprint(id))
+func (s *ClubsAPIService) GetById(access_token string, id int64) (*DetailedClub, error) {
+	requestUrl := s.client.BaseURL.JoinPath(clubsPath, fmt.Sprint(id))
 
-	req, err := c.client.get(requestUrl, nil, access_token)
+	req, err := s.client.newRequest(clientRequestOpts{
+		url: requestUrl,
+		method: http.MethodGet,
+		access_token: access_token,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	resp := &DetailedClub{}
-	if err := c.client.do(req, resp); err != nil {
+	if err := s.client.do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -32,26 +31,31 @@ func (c *ClubsAPIService) GetById(access_token string, id int64) (*DetailedClub,
 }
 
 // Returns a list of the administrators of a given club.
-func (c *ClubsAPIService) GetAdministrators(access_token string, id int64, opts *ClubRequestParams) ([]SummaryAthlete, error) {
+func (s *ClubsAPIService) ListClubAdministrators(access_token string, id int64, p *RequestParams) ([]SummaryAthlete, error) {
 	params := url.Values{}
-	if opts != nil {
-		if opts.Page > 0 {
-			params.Set("page", strconv.Itoa(opts.Page))
+	if p != nil {
+		if p.Page > 0 {
+			params.Set("page", strconv.Itoa(p.Page))
 		}
-		if opts.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(opts.PerPage))
+		if p.PerPage > 0 {
+			params.Set("per_page", strconv.Itoa(p.PerPage))
 		}
 	}
 
-	request_url := c.client.BaseURL.JoinPath(clubsPath, fmt.Sprint(id), "/admins")
+	requestUrl := s.client.BaseURL.JoinPath(clubsPath, fmt.Sprint(id), "/admins")
 
-	req, err := c.client.get(request_url, params, access_token)
+	req, err := s.client.newRequest(clientRequestOpts{
+		url: requestUrl,
+		method: http.MethodGet,
+		body: params,
+		access_token: access_token,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	resp := []SummaryAthlete{}
-	if err := c.client.do(req, &resp); err != nil {
+	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -59,26 +63,31 @@ func (c *ClubsAPIService) GetAdministrators(access_token string, id int64, opts 
 
 // Retrieve recent activities from members of a specific club. The authenticated athlete must belong to the request club in order to hit this endpoint, Pagination is supported. Athlete profile
 // visibility is respected for all activities.
-func (c *ClubsAPIService) GetActivities(access_token string, id int64, opts *ClubRequestParams) ([]ClubActivity, error) {
+func (s *ClubsAPIService) ListClubActivities(access_token string, id int64, p *RequestParams) ([]ClubActivity, error) {
 	params := url.Values{}
-	if opts != nil {
-		if opts.Page > 0 {
-			params.Set("page", strconv.Itoa(opts.Page))
+	if p != nil {
+		if p.Page > 0 {
+			params.Set("page", strconv.Itoa(p.Page))
 		}
-		if opts.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(opts.PerPage))
+		if p.PerPage > 0 {
+			params.Set("per_page", strconv.Itoa(p.PerPage))
 		}
 	}
 
-	request_url := c.client.BaseURL.JoinPath(clubsPath, fmt.Sprint(id), "/activities")
+	requestUrl := s.client.BaseURL.JoinPath(clubsPath, fmt.Sprint(id), "/activities")
 
-	req, err := c.client.get(request_url, params, access_token)
+	req, err := s.client.newRequest(clientRequestOpts{
+		url: requestUrl,
+		method: http.MethodGet,
+		body: params,
+		access_token: access_token,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	resp := []ClubActivity{}
-	if err := c.client.do(req, &resp); err != nil {
+	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -86,26 +95,63 @@ func (c *ClubsAPIService) GetActivities(access_token string, id int64, opts *Clu
 }
 
 // Returns of list of the athletes who are members of a given club.
-func (c *ClubsAPIService) GetMembers(access_token string, id int64, opts *ClubRequestParams) ([]ClubAthlete, error) {
+func (s *ClubsAPIService) ListClubMembers(access_token string, id int64, p *RequestParams) ([]ClubAthlete, error) {
 	params := url.Values{}
-	if opts != nil {
-		if opts.Page > 0 {
-			params.Set("page", strconv.Itoa(opts.Page))
+	if p != nil {
+		if p.Page > 0 {
+			params.Set("page", strconv.Itoa(p.Page))
 		}
-		if opts.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(opts.PerPage))
+		if p.PerPage > 0 {
+			params.Set("per_page", strconv.Itoa(p.PerPage))
 		}
 	}
 
-	request_url := c.client.BaseURL.JoinPath(clubsPath, fmt.Sprint(id), "/members")
+	requestUrl := s.client.BaseURL.JoinPath(clubsPath, fmt.Sprint(id), "/members")
 
-	req, err := c.client.get(request_url, params, access_token)
+	req, err := s.client.newRequest(clientRequestOpts{
+		url: requestUrl,
+		method: http.MethodGet,
+		body: params,
+		access_token: access_token,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	resp := []ClubAthlete{}
-	if err := c.client.do(req, &resp); err != nil {
+	if err := s.client.do(req, &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// Return a list of the clubs whose membership includes the authenticated athlete.
+func (s *ClubsAPIService) ListAthleteClubs(access_token string, p *RequestParams) ([]SummaryClub, error) {
+	requestUrl := s.client.BaseURL.JoinPath(athletePath, clubsPath)
+
+	params := url.Values{}
+	if p != nil {
+		if p.Page > 0 {
+			params.Set("page", strconv.Itoa(p.Page))
+		}
+		if p.PerPage > 0 {
+			params.Set("per_page", strconv.Itoa(p.PerPage))
+		}
+	}
+
+	req, err := s.client.newRequest(clientRequestOpts{
+		url:          requestUrl,
+		method:       http.MethodGet,
+		body:         params,
+		access_token: access_token,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := []SummaryClub{}
+	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
 	}
 
