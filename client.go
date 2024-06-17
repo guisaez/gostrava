@@ -19,6 +19,7 @@ const (
 	gearPath           = "gear"
 	routesPath         = "routes"
 	segmentEffortsPath = "segment_efforts"
+	segmentsPath       = "segments"
 	streamPath         = "streams"
 	uploadsPath        = "uploads"
 )
@@ -31,11 +32,13 @@ type Client struct {
 	BaseURL *url.URL
 
 	// Clubs API service
-	Activities ActivitiesAPIService
-	Athletes   AthleteAPIService
-	Clubs      ClubsAPIService
-	Gears      GearsAPIService
-	Routes     RoutesAPIService
+	Activities     ActivitiesAPIService
+	Athletes       AthleteAPIService
+	Clubs          ClubsAPIService
+	Gears          GearsAPIService
+	Routes         RoutesAPIService
+	SegmentEfforts SegmentEffortsAPIService
+	Segments       SegmentsAPIService
 }
 
 type apiService struct {
@@ -63,6 +66,8 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Clubs = ClubsAPIService{c}
 	c.Gears = GearsAPIService{c}
 	c.Routes = RoutesAPIService{c}
+	c.SegmentEfforts = SegmentEffortsAPIService{c}
+	c.Segments = SegmentsAPIService{c}
 
 	return c
 }
