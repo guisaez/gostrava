@@ -8,6 +8,51 @@ import (
 
 type AthleteAPIService apiService
 
+type MetaAthlete struct {
+	ID int64 `json:"id"` // The unique identifier of the athlete
+}
+
+type SummaryAthlete struct {
+	MetaAthlete
+	BadgeTypeId   uint8         `json:"badge_type_id"`
+	Bio           string        `json:"bio"`            // The athlete's bio.
+	City          string        `json:"city"`           // The athlete's city.
+	Country       string        `json:"country"`        // The athlete's country.
+	CreatedAt     DateTime      `json:"created_at"`     // The time at which the athlete was created.
+	FirstName     string        `json:"firstname"`      // The athlete's first name.
+	LastName      string        `json:"lastname"`       // The athlete's last name.
+	Premium       bool          `json:"premium"`        // Deprecated. Use summit field instead. Whether the athlete has any Summit subscription.
+	Profile       string        `json:"profile"`        // URL to a 124x124 pixel profile picture.
+	ProfileMedium string        `json:"profile_medium"` // URL to a 62x62 pixel profile picture.
+	ResourceState ResourceState `json:"resource_state"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
+	Sex           string        `json:"sex"`            // The athlete's sex. May take one of the following values: M, F
+	State         string        `json:"state"`          // The athlete's state or geographical region.
+	Summit        bool          `json:"summit"`         // Whether the athlete has any Summit subscription.
+	UpdatedAt     DateTime      `json:"updated_at"`     // The time at which the athlete was last updated.
+	Weight        float64       `json:"weight"`         // The athlete's weight.
+}
+
+type DetailedAthlete struct {
+	SummaryAthlete
+	AthleteType           int8          `json:"athlete_type"`
+	Blocked               bool          `json:"blocked"`
+	CanFollow             bool          `json:"can_follow"`
+	DatePreference        string        `json:"date_preference"`
+	FollowerCount         int           `json:"follower_count"` // The athlete's follower count.
+	FriendCount           int           `json:"friend_count"`   // The athlete's friend count.
+	IsWinBackViaUpload    bool          `json:"is_winback_via_upload"`
+	IsWinBackViaView      bool          `json:"is_winback_via_view"`
+	MeasurementPreference Measurement   `json:"measurement_preference"` // The athlete's preferred unit system. May take one of the following values: Measurements.Feet, Measurement.Meters
+	MutualFriendCount     int           `json:"mutual_friend_count"`
+	PostableClubsCount    int           `json:"postable_clubs_count"`
+	FTP                   int           `json:"ftp"`   // The athlete's FTP (Functional Threshold Power).
+	Clubs                 []SummaryClub `json:"clubs"` // The athlete's clubs.
+	Bikes                 []SummaryGear `json:"bikes"` // The athlete's bikes.
+	Shoes                 []SummaryGear `json:"shoes"` // The athlete's shoes.
+}
+
+
+
 // Returns the currently authenticated athlete. Tokens with profile:read_all scope will receive
 // a detailed athlete representation; all others will receive a SummaryAthlete representation
 func (s *AthleteAPIService) GetAuthenticatedAthlete(access_token string) (*DetailedAthlete, error) {
@@ -22,6 +67,8 @@ func (s *AthleteAPIService) GetAuthenticatedAthlete(access_token string) (*Detai
 		return nil, err
 	}
 
+	s.client.TestingFileName = "athlete_get_authenticated_athlete_server_response.json"
+
 	resp := &DetailedAthlete{}
 	if err := s.client.do(req, resp); err != nil {
 		return nil, err
@@ -31,7 +78,7 @@ func (s *AthleteAPIService) GetAuthenticatedAthlete(access_token string) (*Detai
 }
 
 // Returns the authenticated athlete's heart rate and power zones. Requires profile:read_all.
-func (s *AthleteAPIService) GetZones(access_token string) ([]ActivityZone, error) {
+func (s *AthleteAPIService) GetZones(access_token string) (*Zones, error) {
 	requestUrl := s.client.BaseURL.JoinPath(athletePath, "zones")
 
 	req, err := s.client.newRequest(clientRequestOpts{
@@ -43,8 +90,8 @@ func (s *AthleteAPIService) GetZones(access_token string) ([]ActivityZone, error
 		return nil, err
 	}
 
-	resp := []ActivityZone{}
-	if err := s.client.do(req, &resp); err != nil {
+	resp := &Zones{}
+	if err := s.client.do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +112,7 @@ func (s *AthleteAPIService) GetAthleteStats(access_token string, id int64) (*Act
 	}
 
 	resp := &ActivityStats{}
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -93,11 +140,13 @@ func (s *AthleteAPIService) UpdateAthlete(access_token string, p UpdateAthletePa
 		body:         params,
 	})
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
 	resp := &DetailedAthlete{}
 	if err := s.client.do(req, resp); err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 

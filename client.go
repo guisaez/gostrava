@@ -1,8 +1,10 @@
 package gostrava
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -39,6 +41,9 @@ type Client struct {
 	Routes         RoutesAPIService
 	SegmentEfforts SegmentEffortsAPIService
 	Segments       SegmentsAPIService
+
+	// Testing
+	TestingFileName string
 }
 
 type apiService struct {
@@ -84,16 +89,37 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 		resp.Body.Close()
 	}()
 
+	var buf bytes.Buffer
+	r := io.TeeReader(resp.Body, &buf)
+
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
 		var errResp Error
-		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
+
+		if err := json.NewDecoder(r).Decode(&errResp); err != nil {
 			return err
 		}
+
 		return &errResp
 	}
 
+	if c.TestingFileName != "" {
+		WriteJsonFile(c.TestingFileName, buf.Bytes())
+	}
+
 	if v != nil {
-		return json.NewDecoder(resp.Body).Decode(&v)
+		err = json.NewDecoder(r).Decode(&v)
+
+		if c.TestingFileName != "" {
+			var jsonData interface{}
+			if err := json.Unmarshal(buf.Bytes(), &jsonData); err != nil {
+				fmt.Println(err)
+			}
+			formattedJson, _ := json.MarshalIndent(jsonData, "", "\t")
+
+			WriteJsonFile(c.TestingFileName, formattedJson)
+		}
+
+		return err
 	}
 
 	return nil
