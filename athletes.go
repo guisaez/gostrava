@@ -9,27 +9,27 @@ import (
 type AthleteAPIService apiService
 
 type MetaAthlete struct {
-	ID int64 `json:"id"` // The unique identifier of the athlete
+	ID            int64         `json:"id"`             // The unique identifier of the athlete
+	ResourceState ResourceState `json:"resource_state"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
 }
 
 type SummaryAthlete struct {
 	MetaAthlete
-	BadgeTypeId   uint8         `json:"badge_type_id"`
-	Bio           string        `json:"bio"`            // The athlete's bio.
-	City          string        `json:"city"`           // The athlete's city.
-	Country       string        `json:"country"`        // The athlete's country.
-	CreatedAt     DateTime      `json:"created_at"`     // The time at which the athlete was created.
-	FirstName     string        `json:"firstname"`      // The athlete's first name.
-	LastName      string        `json:"lastname"`       // The athlete's last name.
-	Premium       bool          `json:"premium"`        // Deprecated. Use summit field instead. Whether the athlete has any Summit subscription.
-	Profile       string        `json:"profile"`        // URL to a 124x124 pixel profile picture.
-	ProfileMedium string        `json:"profile_medium"` // URL to a 62x62 pixel profile picture.
-	ResourceState ResourceState `json:"resource_state"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
-	Sex           string        `json:"sex"`            // The athlete's sex. May take one of the following values: M, F
-	State         string        `json:"state"`          // The athlete's state or geographical region.
-	Summit        bool          `json:"summit"`         // Whether the athlete has any Summit subscription.
-	UpdatedAt     DateTime      `json:"updated_at"`     // The time at which the athlete was last updated.
-	Weight        float64       `json:"weight"`         // The athlete's weight.
+	BadgeTypeId   uint8    `json:"badge_type_id"`
+	Bio           string   `json:"bio"`            // The athlete's bio.
+	City          string   `json:"city"`           // The athlete's city.
+	Country       string   `json:"country"`        // The athlete's country.
+	CreatedAt     DateTime `json:"created_at"`     // The time at which the athlete was created.
+	FirstName     string   `json:"firstname"`      // The athlete's first name.
+	LastName      string   `json:"lastname"`       // The athlete's last name.
+	Premium       bool     `json:"premium"`        // Deprecated. Use summit field instead. Whether the athlete has any Summit subscription.
+	Profile       string   `json:"profile"`        // URL to a 124x124 pixel profile picture.
+	ProfileMedium string   `json:"profile_medium"` // URL to a 62x62 pixel profile picture.
+	Sex           string   `json:"sex"`            // The athlete's sex. May take one of the following values: M, F
+	State         string   `json:"state"`          // The athlete's state or geographical region.
+	Summit        bool     `json:"summit"`         // Whether the athlete has any Summit subscription.
+	UpdatedAt     DateTime `json:"updated_at"`     // The time at which the athlete was last updated.
+	Weight        float64  `json:"weight"`         // The athlete's weight.
 }
 
 type DetailedAthlete struct {
@@ -50,8 +50,6 @@ type DetailedAthlete struct {
 	Bikes                 []SummaryGear `json:"bikes"` // The athlete's bikes.
 	Shoes                 []SummaryGear `json:"shoes"` // The athlete's shoes.
 }
-
-
 
 // Returns the currently authenticated athlete. Tokens with profile:read_all scope will receive
 // a detailed athlete representation; all others will receive a SummaryAthlete representation

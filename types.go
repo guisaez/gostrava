@@ -136,9 +136,6 @@ type CadenceStream struct {
 	Data []int `json:"data"` //  The sequence of cadence values for this stream, in rotations per minute
 }
 
-
-
-
 type ClubMembership string
 
 var ClubMembershipStatus = struct {
@@ -165,21 +162,6 @@ type Comment struct {
 	Text       string         `json:"text"`        // The content of the comment
 	Athlete    SummaryAthlete `json:"athlete"`     // An instance of SummaryAthlete.
 	CreatedAt  DateTime       `json:"created_at"`  // The time at which this comment was created.
-}
-
-type DetailedActivity struct {
-	SummaryActivity
-	Description    string                  `json:"description"`     // The description of the activity
-	Photos         PhotosSummary           `json:"photos"`          // An instance of PhotosSummary.
-	Gear           SummaryGear             `json:"gear"`            // An instance of SummaryGear.
-	Calories       float32                 `json:"calories"`        // The number of kilocalories consumed during this activity
-	SegmentEfforts []DetailedSegmentEffort `json:"segment_efforts"` // A collection of DetailedSegmentEffort objects.
-	DeviceName     string                  `json:"device_name"`     // The name of the device used to record the activity
-	EmbedToken     string                  `json:"embed_token"`     // The token used to embed a Strava activity
-	SplitsMetric   []Split                 `json:"splits_metric"`   // The splits of this activity in metric units (for runs)
-	SplitsStandard []Split                 `json:"splits_standard"` // The splits of this activity in imperial units (for runs)
-	Laps           []Lap                   `json:"laps"`            // A collection of Lap objects.
-	BestEfforts    []DetailedSegmentEffort `json:"best_efforts"`    // A collection of DetailedSegmentEffort objects.
 }
 
 type DetailedGear struct {
@@ -257,20 +239,23 @@ type Lap struct {
 	Activity           MetaActivity `json:"activity"`             // An instance of MetaActivity.
 	Athlete            MetaAthlete  `json:"athlete"`              // AN instance of MetaAthlete.
 	AvgCadence         float32      `json:"average_cadence"`      // The lap's average cadence
+	AvgHeartRate       float32      `json:"average_heartrate"`    // The lap's average heartrate
 	AvgSpeed           float32      `json:"average_speed"`        // The lap's average speed
+	DeviceWatts        bool         `json:"device_watts"`         // Whether the watts are from a power meter, false if estimated
 	Distance           float32      `json:"distance"`             // The lap's distance, in meters
 	ElapsedTime        int          `json:"elapsed_time"`         // The lap's elapsed time, in seconds
-	StartIndex         int          `json:"start_index"`          // The start index of this effort in its activity's stream
 	EndIndex           int          `json:"end_index"`            // The end index of this effort in its activity's stream
 	LapIndex           int          `json:"lap_index"`            // The index of this lap in the activity it belongs to
+	MaxHeartRate       float32      `json:"max_heartrate"`        // The maximum heartrate of this lap, in beats per minute
 	MaxSpeed           float32      `json:"max_speed"`            // The maximum speed of this lat, in meters per second
 	MovingTime         int          `json:"moving_time"`          // The lap's moving time, in seconds
 	Name               string       `json:"name"`                 // The name of the lap
-	PaceZone           int          `json:"pace_zone"`            // The athlete's pace zone during this lap
 	Split              int          `json:"split"`                // An instance of integer.
+	StartIndex         int          `json:"start_index"`          // The start index of this effort in its activity's stream
 	StartDate          DateTime     `json:"start_date"`           // The time at which the lap was started.
 	StartDateLocal     DateTime     `json:"start_date_local"`     // The time at which the lap was started in the local timezone.
 	TotalElevationGain float32      `json:"total_elevation_gain"` // The elevation gain of this lap, in meters
+	PaceZone           int          `json:"pace_zone"`            // The athlete's pace zone during this lap
 }
 
 type LatLng [2]float64 // A collection of float objects. A pair of latitude/longitude coordinates, represented as an array of 2 floating point numbers.
@@ -287,10 +272,6 @@ var Measurements = struct {
 	Meters Measurement
 }{
 	"feet", "meters",
-}
-
-type MetaActivity struct {
-	ID int64 `json:"id"` // The unique identifier of the activity
 }
 
 type MovingStream struct {
@@ -480,51 +461,6 @@ var SubRouteTypes = struct {
 	Mixed        SubRouteType
 }{
 	1, 2, 3, 4, 5,
-}
-
-type SummaryActivity struct {
-	MetaActivity
-	ExternalID         string       `json:"external_id"`            // The identifier provided at upload time
-	UploadID           int64        `json:"upload_id"`              // The identifier of the upload that resulted in this activity
-	Athlete            MetaAthlete  `json:"athlete"`                // An instance of MetaAthlete.
-	Name               string       `json:"name"`                   // The name of the activity
-	Distance           float32      `json:"distance"`               // The activity's distance, in meters
-	MovingTime         int          `json:"moving_time"`            // The activity's moving time, in seconds
-	ElapsedTime        int          `json:"elapsed_time"`           // The activity's elapsed time, in seconds
-	TotalElevationGain float32      `json:"total_elevation_gain"`   // The activity's total elevation gain.
-	ElevationHigh      float32      `json:"elev_high"`              // The activity's highest elevation, in meters
-	ElevationLow       float32      `json:"elev_low"`               // The activity's lowest elevation, in meters
-	Type               ActivityType `json:"type"`                   // Deprecated. Prefer to use sport_type
-	SportType          SportType    `json:"sport_type"`             // An instance of SportType.
-	StartDate          DateTime     `json:"start_date"`             // The time at which the activity was started.
-	StartDateLocal     DateTime     `json:"start_date_local"`       // The time at which the activity was started in the local timezone.
-	Timezone           string       `json:"timezone"`               // The timezone of the activity
-	StartLatLng        LatLng       `json:"start_latlng"`           // An instance of LatLng.
-	EndLatLng          LatLng       `json:"end_latlng"`             // An instance of LatLng.
-	AchievementCount   int          `json:"achievement_count"`      // The number of achievements gained during this activity
-	KudosCount         int          `json:"kudos_count"`            // The number of kudos given for this activity
-	CommentCount       int          `json:"comment_count"`          // The number of comments for this activity
-	AthleteCount       int          `json:"athlete_count"`          // The number of athletes for taking part in a group activity
-	PhotoCount         int          `json:"photo_count"`            // The number of Instagram photos for this activity
-	TotalPhotoCount    int          `json:"total_photo_count"`      // The number of Instagram and Strava photos for this activity
-	Map                PolylineMap  `json:"map"`                    // An instance of PolylineMap.
-	Trainer            bool         `json:"trainer"`                // Whether this activity was recorded on a training machine
-	Commute            bool         `json:"commute"`                // Whether this activity is a commute
-	Manual             bool         `json:"manual"`                 // Whether this activity was created manually
-	Private            bool         `json:"private"`                // Whether this activity is private
-	Flagged            bool         `json:"flagged"`                // Whether this activity is flagged
-	WorkoutType        int          `json:"workout_type"`           //  The activity's workout type
-	UploadIdStr        string       `json:"upload_id_str"`          // The unique identifier of the upload in string format
-	AvgSpeed           float32      `json:"average_speed"`          // The activity's average speed, in meters per second
-	MaxSpeed           float32      `json:"max_speed"`              // The activity's max speed, in meters per second
-	HasKudoed          bool         `json:"has_kudoed"`             // Whether the logged-in athlete has kudoed this activity
-	HideFromHome       bool         `json:"hide_from_home"`         // Whether the activity is muted
-	GearID             string       `json:"gear_id"`                // The id of the gear for the activity
-	Kilojoules         float32      `json:"kilojoules"`             // The total work done in kilojoules during this activity. Rides only
-	AvgWatts           float32      `json:"average_watts"`          // Average power output in watts during this activity. Rides only
-	DeviceWatts        bool         `json:"device_watts"`           // Whether the watts are from a power meter, false if estimated
-	MaxWatts           int          `json:"max_watts"`              // Rides with power meter data only
-	WeightedAvgWatts   int          `json:"weighted_average_watts"` // Similar to Normalized Power. Rides with power meter data only
 }
 
 type SummaryGear struct {

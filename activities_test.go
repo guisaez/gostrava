@@ -188,7 +188,7 @@ func TestListAthleteActivities(t *testing.T) {
 
 	strava := NewClient(nil)
 
-	resp, err := strava.Athletes.ListAthleteActivities("12345", nil)
+	resp, err := strava.Activities.ListAthleteActivities("12345", nil)
 	if err != nil {
 		t.Errorf("error not expected, got %v", err.Error())
 	}
@@ -215,7 +215,6 @@ func TestGetActivityZones(t *testing.T) {
 
 	fmt.Println(string(json))
 }
-
 
 func TestUpdateActivity(t *testing.T) {
 	httpmock.Activate()

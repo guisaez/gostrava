@@ -11,8 +11,8 @@ type ClubsAPIService apiService
 
 type MetaClub struct {
 	ID            int64         `json:"id"`             // The club's unique identifier.
-	ResourceState ResourceState `json:"resource_state"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
 	Name          string        `json:"name"`           // The club's name.
+	ResourceState ResourceState `json:"resource_state"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
 }
 
 type SummaryClub struct {

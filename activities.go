@@ -13,6 +13,85 @@ import (
 
 type ActivitiesAPIService apiService
 
+type MetaActivity struct {
+	ID            int64         `json:"id"`             // The unique identifier of the activity
+	ResourceState ResourceState `json:"resource_state"` //
+	Visibility    string        `json:"visibility"`     //
+}
+
+type SummaryActivity struct {
+	MetaActivity
+	AchievementCount           int          `json:"achievement_count"`        // The number of achievements gained during this activity
+	Athlete                    MetaAthlete  `json:"athlete"`                  // An instance of MetaAthlete.
+	AthleteCount               int          `json:"athlete_count"`            // The number of athletes for taking part in a group activity
+	AvgHeartRate               float32      `json:"average_heartrate"`        // The activity's average heart rate, in beats per minute
+	AvgSpeed                   float32      `json:"average_speed"`            // The activity's average speed, in meters per second
+	CommentCount               int          `json:"comment_count"`            // The number of comments for this activity
+	Commute                    bool         `json:"commute"`                  // Whether this activity is a commute
+	DisplayHideHeartRateOption bool         `json:"display_heartrate_option"` //
+	Distance                   float32      `json:"distance"`                 // The activity's distance, in meters
+	ElapsedTime                int          `json:"elapsed_time"`             // The activity's elapsed time, in seconds
+	ElevationHigh              float32      `json:"elev_high"`                // The activity's highest elevation, in meters
+	ElevationLow               float32      `json:"elev_low"`                 // The activity's lowest elevation, in meters
+	EndLatLng                  LatLng       `json:"end_latlng"`               // An instance of LatLng.
+	ExternalID                 string       `json:"external_id"`              // The identifier provided at upload time
+	Flagged                    bool         `json:"flagged"`                  // Whether this activity is flagged
+	FromAcceptedTag            bool         `json:"from_accepted_tag"`        //
+	GearID                     string       `json:"gear_id"`                  // The id of the gear for the activity
+	HasHeartRate               bool         `json:"has_heartrate"`            // Indicates weather the activity has a heartrate recorder
+	HasKudoed                  bool         `json:"has_kudoed"`               // Whether the logged-in athlete has kudoed this activity
+	HeartRateOptOut            bool         `json:"heartrate_opt_out"`        //
+	HideFromHome               bool         `json:"hide_from_home"`           // Whether the activity is muted
+	KudosCount                 int          `json:"kudos_count"`              // The number of kudos given for this activity
+	LocationCity               string       `json:"location_city"`            //
+	LocationCountry            string       `json:"location_country"`         //
+	LocationState              string       `json:"location_state"`           //
+	Manual                     bool         `json:"manual"`                   // Indicates whether this activity was manually created by the user
+	Map                        PolylineMap  `json:"map"`                      // An instance of PolylineMap.
+	MaxHeartRate               float32      `json:"max_heartrate"`            // The activity's max heartrate in beats per minute
+	MaxSpeed                   float32      `json:"max_speed"`                // The activity's max speed, in meters per second
+	MovingTime                 int          `json:"moving_time"`              // The activity's moving time, in seconds
+	Name                       string       `json:"name"`                     // The name of the activity
+	PhotoCount                 int          `json:"photo_count"`              // The number of Instagram photos for this activity
+	PRCount                    int          `json:"pr_count"`                 //
+	Private                    bool         `json:"private"`                  // Whether this activity is private
+	SportType                  SportType    `json:"sport_type"`               // An instance of SportType.
+	StartDate                  DateTime     `json:"start_date"`               // The time at which the activity was started.
+	StartDateLocal             DateTime     `json:"start_date_local"`         // The time at which the activity was started in the local timezone.
+	StartLatLng                LatLng       `json:"start_latlng"`             // An instance of LatLng.
+	SufferScore                float32      `json:"suffer_score"`             //
+	Timezone                   string       `json:"timezone"`                 // The timezone of the activity
+	TotalElevationGain         float32      `json:"total_elevation_gain"`     // The activity's total elevation gain.
+	TotalPhotoCount            int          `json:"total_photo_count"`        // The number of Instagram and Strava photos for this activity
+	Trainer                    bool         `json:"trainer"`                  // Whether this activity was recorded on a training machine
+	Type                       ActivityType `json:"type"`                     // Deprecated. Prefer to use sport_type
+	UploadID                   int64        `json:"upload_id"`                // The identifier of the upload that resulted in this activity
+	UploadIdStr                string       `json:"upload_id_str"`            // The unique identifier of the upload in string format
+	UTCOffset                  float32      `json:"utc_offset"`               //
+	WorkoutType                int          `json:"workout_type"`             //  The activity's workout type
+
+	Kilojoules       float32 `json:"kilojoules"`             // The total work done in kilojoules during this activity. Rides only
+	AvgWatts         float32 `json:"average_watts"`          // Average power output in watts during this activity. Rides only
+	DeviceWatts      bool    `json:"device_watts"`           // Whether the watts are from a power meter, false if estimated
+	MaxWatts         int     `json:"max_watts"`              // Rides with power meter data only
+	WeightedAvgWatts int     `json:"weighted_average_watts"` // Similar to Normalized Power. Rides with power meter data only
+}
+
+type DetailedActivity struct {
+	SummaryActivity
+	BestEfforts    []DetailedSegmentEffort `json:"best_efforts"`    // A collection of DetailedSegmentEffort objects.
+	Calories       float32                 `json:"calories"`        // The number of kilocalories consumed during this activity
+	DeviceName     string                  `json:"device_name"`     // The name of the device used to record the activity
+	Description    string                  `json:"description"`     // The description of the activity
+	EmbedToken     string                  `json:"embed_token"`     // The token used to embed a Strava activity
+	Gear           SummaryGear             `json:"gear"`            // An instance of SummaryGear.
+	Laps           []Lap                   `json:"laps"`            // A collection of Lap objects.
+	Photos         PhotosSummary           `json:"photos"`          // An instance of PhotosSummary.
+	SegmentEfforts []DetailedSegmentEffort `json:"segment_efforts"` // A collection of DetailedSegmentEffort objects.
+	SplitsMetric   []Split                 `json:"splits_metric"`   // The splits of this activity in metric units (for runs)
+	SplitsStandard []Split                 `json:"splits_standard"` // The splits of this activity in imperial units (for runs)
+}
+
 type Activity struct {
 	Name           string       `json:"name"`                  // The name of the activity.
 	Type           ActivityType `json:"type,omitempty"`        // Type of activity. For example - Run, Ride etc.
@@ -77,6 +156,8 @@ func (s *ActivitiesAPIService) GetByID(access_token string, activityID int64, in
 		return nil, err
 	}
 
+	s.client.TestingFileName = "activity_get_by_id_server_response.json"
+
 	resp := &DetailedActivity{}
 	if err := s.client.do(req, resp); err != nil {
 		return nil, err
@@ -99,6 +180,9 @@ func (s *ActivitiesAPIService) ListActivityZones(access_token string, activityID
 	if err != nil {
 		return nil, err
 	}
+
+	s.client.TestingFileName = "activity_list_activity_zones_server_response.json"
+
 	resp := []ActivityZone{}
 	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
@@ -142,6 +226,9 @@ func (s *ActivitiesAPIService) ListActivityComments(access_token string, activit
 	if err != nil {
 		return nil, err
 	}
+
+	s.client.TestingFileName = "activity_list_activity_comments_server_response.json"
+
 	resp := []Comment{}
 	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
@@ -174,6 +261,9 @@ func (s *ActivitiesAPIService) ListActivityKudoers(access_token string, activity
 	if err != nil {
 		return nil, err
 	}
+
+	s.client.TestingFileName = "activity_list_activity_kudoers_server_response.json"
+
 	resp := []SummaryAthlete{}
 	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
@@ -195,6 +285,9 @@ func (s *ActivitiesAPIService) ListActivityLaps(access_token string, activityID 
 	if err != nil {
 		return nil, err
 	}
+
+	s.client.TestingFileName = "activity_list_activity_laps_server_response.json"
+
 	resp := []Lap{}
 	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
@@ -211,7 +304,7 @@ type GetActivityParams struct {
 
 // Returns the activities of an athlete for a specific identifier. Requires activity:read, OnlyMe activities will be filtered out unless
 // requested by a token with activity_read:all.
-func (s *AthleteAPIService) ListAthleteActivities(access_token string, p *GetActivityParams) ([]SummaryActivity, error) {
+func (s *ActivitiesAPIService) ListAthleteActivities(access_token string, p *GetActivityParams) ([]SummaryActivity, error) {
 	requestUrl := s.client.BaseURL.JoinPath(athletePath, activitiesPath)
 	params := url.Values{}
 	if p != nil {
@@ -237,6 +330,8 @@ func (s *AthleteAPIService) ListAthleteActivities(access_token string, p *GetAct
 	if err != nil {
 		return nil, err
 	}
+
+	s.client.TestingFileName = "activity_list_athlete_activities_server_response.json"
 
 	var resp []SummaryActivity
 	err = s.client.do(req, &resp)
