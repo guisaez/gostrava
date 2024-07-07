@@ -10,7 +10,7 @@ import (
 type ClubsAPIService apiService
 
 type MetaClub struct {
-	ID            int64         `json:"id"`             // The club's unique identifier.
+	ID            int           `json:"id"`             // The club's unique identifier.
 	Name          string        `json:"name"`           // The club's name.
 	ResourceState ResourceState `json:"resource_state"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
 }
@@ -69,7 +69,7 @@ type ClubAthlete struct {
 }
 
 // Returns a given club using its identifier
-func (s *ClubsAPIService) GetById(access_token string, id int64) (*DetailedClub, error) {
+func (s *ClubsAPIService) GetById(access_token string, id int) (*DetailedClub, error) {
 	requestUrl := s.client.BaseURL.JoinPath(clubsPath, fmt.Sprint(id))
 
 	req, err := s.client.newRequest(clientRequestOpts{
@@ -97,7 +97,7 @@ func (s *ClubsAPIService) GetById(access_token string, id int64) (*DetailedClub,
 //		"lastname": "Doe",
 //		"resource_state": 2
 //	}]
-func (s *ClubsAPIService) ListClubAdministrators(access_token string, id int64, p *RequestParams) ([]SummaryAthlete, error) {
+func (s *ClubsAPIService) ListClubAdministrators(access_token string, id int, p *RequestParams) ([]SummaryAthlete, error) {
 	params := url.Values{}
 	if p != nil {
 		if p.Page > 0 {
@@ -139,7 +139,7 @@ func (s *ClubsAPIService) ListClubAdministrators(access_token string, id int64, 
 //		},
 //		...
 //	}]
-func (s *ClubsAPIService) ListClubActivities(access_token string, id int64, p *RequestParams) ([]ClubActivity, error) {
+func (s *ClubsAPIService) ListClubActivities(access_token string, id int, p *RequestParams) ([]ClubActivity, error) {
 	params := url.Values{}
 	if p != nil {
 		if p.Page > 0 {
@@ -171,7 +171,7 @@ func (s *ClubsAPIService) ListClubActivities(access_token string, id int64, p *R
 }
 
 // Returns of list of the athletes who are members of a given club.
-func (s *ClubsAPIService) ListClubMembers(access_token string, id int64, p *RequestParams) ([]ClubAthlete, error) {
+func (s *ClubsAPIService) ListClubMembers(access_token string, id int, p *RequestParams) ([]ClubAthlete, error) {
 	params := url.Values{}
 	if p != nil {
 		if p.Page > 0 {

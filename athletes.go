@@ -9,16 +9,16 @@ import (
 type AthleteAPIService apiService
 
 type MetaAthlete struct {
-	ID            int64         `json:"id"`             // The unique identifier of the athlete
+	ID            int           `json:"id"`             // The unique identifier of the athlete
 	ResourceState ResourceState `json:"resource_state"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
 }
 
 type SummaryAthlete struct {
 	MetaAthlete
 	BadgeTypeId   uint8    `json:"badge_type_id"`
-	Bio           string   `json:"bio"`            // The athlete's bio.
-	City          string   `json:"city"`           // The athlete's city.
-	Country       string   `json:"country"`        // The athlete's country.
+	Bio           *string  `json:"bio"`            // The athlete's bio.
+	City          *string  `json:"city"`           // The athlete's city.
+	Country       *string  `json:"country"`        // The athlete's country.
 	CreatedAt     DateTime `json:"created_at"`     // The time at which the athlete was created.
 	FirstName     string   `json:"firstname"`      // The athlete's first name.
 	LastName      string   `json:"lastname"`       // The athlete's last name.
@@ -26,10 +26,10 @@ type SummaryAthlete struct {
 	Profile       string   `json:"profile"`        // URL to a 124x124 pixel profile picture.
 	ProfileMedium string   `json:"profile_medium"` // URL to a 62x62 pixel profile picture.
 	Sex           string   `json:"sex"`            // The athlete's sex. May take one of the following values: M, F
-	State         string   `json:"state"`          // The athlete's state or geographical region.
+	State         *string  `json:"state"`          // The athlete's state or geographical region.
 	Summit        bool     `json:"summit"`         // Whether the athlete has any Summit subscription.
 	UpdatedAt     DateTime `json:"updated_at"`     // The time at which the athlete was last updated.
-	Weight        float64  `json:"weight"`         // The athlete's weight.
+	Weight        *float64 `json:"weight"`         // The athlete's weight.
 }
 
 type DetailedAthlete struct {
@@ -45,7 +45,7 @@ type DetailedAthlete struct {
 	MeasurementPreference Measurement   `json:"measurement_preference"` // The athlete's preferred unit system. May take one of the following values: Measurements.Feet, Measurement.Meters
 	MutualFriendCount     int           `json:"mutual_friend_count"`
 	PostableClubsCount    int           `json:"postable_clubs_count"`
-	FTP                   int           `json:"ftp"`   // The athlete's FTP (Functional Threshold Power).
+	FTP                   *int          `json:"ftp"`   // The athlete's FTP (Functional Threshold Power).
 	Clubs                 []SummaryClub `json:"clubs"` // The athlete's clubs.
 	Bikes                 []SummaryGear `json:"bikes"` // The athlete's bikes.
 	Shoes                 []SummaryGear `json:"shoes"` // The athlete's shoes.
@@ -97,7 +97,7 @@ func (s *AthleteAPIService) GetZones(access_token string) (*Zones, error) {
 }
 
 // Returns the activity stats of an athlete. Only includes data from activities set to Everyone's visibility.
-func (s *AthleteAPIService) GetAthleteStats(access_token string, id int64) (*ActivityStats, error) {
+func (s *AthleteAPIService) GetAthleteStats(access_token string, id int) (*ActivityStats, error) {
 	requestUrl := s.client.BaseURL.JoinPath(athletesPath, fmt.Sprint(id), "stats")
 
 	req, err := s.client.newRequest(clientRequestOpts{

@@ -41,6 +41,7 @@ type Client struct {
 	Routes         RoutesAPIService
 	SegmentEfforts SegmentEffortsAPIService
 	Segments       SegmentsAPIService
+	Streams         StreamsAPIService
 
 	// Testing
 	TestingFileName string
@@ -73,6 +74,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Routes = RoutesAPIService{c}
 	c.SegmentEfforts = SegmentEffortsAPIService{c}
 	c.Segments = SegmentsAPIService{c}
+	c.Streams = StreamsAPIService{c}
 
 	return c
 }
@@ -96,9 +98,11 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 		var errResp Error
 
 		if err := json.NewDecoder(r).Decode(&errResp); err != nil {
+			fmt.Println(err)
 			return err
 		}
 
+		fmt.Println(errResp)
 		return &errResp
 	}
 
