@@ -41,7 +41,8 @@ type Client struct {
 	Routes         RoutesAPIService
 	SegmentEfforts SegmentEffortsAPIService
 	Segments       SegmentsAPIService
-	Streams         StreamsAPIService
+	Streams        StreamsAPIService
+	
 
 	// Testing
 	TestingFileName string
