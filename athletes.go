@@ -10,7 +10,7 @@ type AthleteAPIService apiService
 
 type MetaAthlete struct {
 	ID            int           `json:"id,omitempty"`   // The unique identifier of the athlete
-	ResourceState ResourceState `json:"resource_state"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
+	ResourceState uint8 `json:"resource_state"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
 }
 
 type SummaryAthlete struct {
@@ -42,13 +42,36 @@ type DetailedAthlete struct {
 	FriendCount           int           `json:"friend_count"`   // The athlete's friend count.
 	IsWinBackViaUpload    bool          `json:"is_winback_via_upload"`
 	IsWinBackViaView      bool          `json:"is_winback_via_view"`
-	MeasurementPreference Measurement   `json:"measurement_preference"` // The athlete's preferred unit system. May take one of the following values: Measurements.Feet, Measurement.Meters
+	MeasurementPreference string        `json:"measurement_preference"` // The athlete's preferred unit system. May take one of the following values: feet, meters
 	MutualFriendCount     int           `json:"mutual_friend_count"`
 	PostableClubsCount    int           `json:"postable_clubs_count"`
 	FTP                   *int          `json:"ftp"`   // The athlete's FTP (Functional Threshold Power).
 	Clubs                 []SummaryClub `json:"clubs"` // The athlete's clubs.
 	Bikes                 []SummaryGear `json:"bikes"` // The athlete's bikes.
 	Shoes                 []SummaryGear `json:"shoes"` // The athlete's shoes.
+}
+
+// A set of rolled-up statistics and totals for an athlete
+type ActivityStats struct {
+	AllRideTotals        ActivityTotal `json:"all_ride_totals"`    // The all time ride stats for the athlete.
+	AllRunTotals         ActivityTotal `json:"all_run_totals"`     // The all time run stats for the athlete.
+	AllSwimTotals        ActivityTotal `json:"all_swim_totals"`    // The all time swim stats for the athlete.
+	RecentRideTotals     ActivityTotal `json:"recent_ride_totals"` // The recent (last 4 weeks) ride stats for the athlete.
+	RecentRunTotals      ActivityTotal `json:"recent_run_totals"`  // The recent (last 4 weeks) run stats for the athlete.
+	RecentSwimTotals     ActivityTotal `json:"recent_swim_totals"` // The recent (last 4 weeks) swim stats for the athlete.
+	YearToDateRideTotals ActivityTotal `json:"ytd_ride_totals"`    // The year to date ride stats for the athlete.
+	YearToDateRunTotals  ActivityTotal `json:"ytd_run_totals"`     // The year to date run stats for the athlete.
+	YearToDateSwimTotals ActivityTotal `json:"ytd_swim_totals"`    // The year to date swim stats for the athlete.
+}
+
+// A roll-up of metrics pertaining to a set of activities. Values are in seconds and meters.
+type ActivityTotal struct {
+	Count            int     `json:"count"`             // The number of activities considered in this total.
+	Distance         float32 `json:"distance"`          // The total distance covered by the considered activities.
+	MovingTime       int     `json:"moving_time"`       // The total moving time of the considered activities.
+	ElapsedTime      int     `json:"elapsed_time"`      // The total elapsed time of the considered activities.
+	ElevationGain    float32 `json:"elevation_gain"`    // The total elevation gain of the considered activities.
+	AchievementCount int     `json:"achievement_count"` // The total number of achievements of the considered activities.
 }
 
 // Returns the currently authenticated athlete. Tokens with profile:read_all scope will receive

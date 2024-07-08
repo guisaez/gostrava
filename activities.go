@@ -15,7 +15,7 @@ type ActivitiesAPIService apiService
 
 type MetaActivity struct {
 	ID            int           `json:"id"`                   // The unique identifier of the activity
-	ResourceState ResourceState `json:"resource_state"`       //
+	ResourceState uint8 `json:"resource_state"`       //
 	Visibility    *string       `json:"visibility,omitempty"` //
 }
 
@@ -73,7 +73,7 @@ type SummaryActivity struct {
 
 type DetailedActivity struct {
 	SummaryActivity
-	AvailableZones []ActivityZoneType      `json:"available_zones"` // Activity available zones
+	AvailableZones []string                `json:"available_zones"` // Activity available zones, it can include the following values: heartrate, power
 	BestEfforts    []DetailedSegmentEffort `json:"best_efforts"`    // A collection of DetailedSegmentEffort objects.
 	Calories       float32                 `json:"calories"`        // The number of kilocalories consumed during this activity
 	DeviceName     string                  `json:"device_name"`     // The name of the device used to record the activity
@@ -87,7 +87,25 @@ type DetailedActivity struct {
 	SplitsStandard []Split                 `json:"splits_standard"` // The splits of this activity in imperial units (for runs)
 }
 
-type Activity struct {
+type ActivityZone struct {
+	Score               float32               `json:"score"`
+	DistributionBuckets TimedZoneDistribution `json:"distribution_buckets"`
+	Type                string                `json:"type"` // May take one of the following values: heartrate, power
+	SensorBased         bool                  `json:"sensor_based"`
+	Points              int                   `json:"points"`
+	CustomZones         bool                  `json:"custom_zones"`
+	Max                 int                   `json:"max"`
+}
+
+type Comment struct {
+	ID         int            `json:"id"`          // The unique identifier of this comment
+	ActivityID int            `json:"activity_id"` // The identifier of the activity this comment is related to
+	Text       string         `json:"text"`        // The content of the comment
+	Athlete    SummaryAthlete `json:"athlete"`     // An instance of SummaryAthlete.
+	CreatedAt  DateTime       `json:"created_at"`  // The time at which this comment was created.
+}
+
+type NewActivity struct {
 	Name           string       `json:"name"`                  // The name of the activity.
 	Type           ActivityType `json:"type,omitempty"`        // Type of activity. For example - Run, Ride etc.
 	SportType      SportType    `json:"sport_type"`            // Sport type of activity. For example - Run, MountainBikeRide, Ride, etc.
@@ -100,7 +118,7 @@ type Activity struct {
 }
 
 // Creates a manual activity for an athlete, requires activity:write scope.
-func (s *ActivitiesAPIService) New(access_token string, payload Activity) (*DetailedActivity, error) {
+func (s *ActivitiesAPIService) New(access_token string, payload NewActivity) (*DetailedActivity, error) {
 	requestUrl := s.client.BaseURL.JoinPath(activitiesPath)
 
 	formData := url.Values{}

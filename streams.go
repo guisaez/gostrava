@@ -24,33 +24,18 @@ type StreamSet struct {
 }
 
 type BaseStream struct {
-	OriginalSize int                  `json:"original_size"` // The number of data points in this stream
-	Resolution   BaseStreamResolution `json:"resolution"`    // The level of detail (sampling) in which this stream was returned May take one of the following values: BaseStreamResolutions.Low, BaseStreamResolution.Medium, BaseStreamResolution.High
-	SeriesType   BaseStreamSeriesType `json:"series_type"`   // The base series used in the case the stream was downsampled May take one of the following values: BaseStreamSeriesTypes.Distance, BaseStreamSeriesTypes.Time
+	OriginalSize int    `json:"original_size"` // The number of data points in this stream
+	Resolution   string `json:"resolution"`    // The level of detail (sampling) in which this stream was returned May take one of the following values: low, medium, high
+	SeriesType   string `json:"series_type"`   // The base series used in the case the stream was downsampled May take one of the following values: distance, time
 }
-
-type BaseStreamResolution string
-
-type BaseStreamSeriesType string
-
-var BaseResolutions = struct {
-	Low    BaseStreamResolution
-	Medium BaseStreamResolution
-	High   BaseStreamResolution
-}{
-	"low", "medium", "high",
-}
-
-var BaseStreamSeriesTypes = struct {
-	Distance BaseStreamSeriesType
-	Time     BaseStreamSeriesType
-}{
-	"distance", "time",
-}
-
 type AltitudeStream struct {
 	Data []float32 `json:"data"` // The sequence of altitude values for this stream, in meters
 	BaseStream
+}
+
+type CadenceStream struct {
+	BaseStream
+	Data []int `json:"data"` //  The sequence of cadence values for this stream, in rotations per minute
 }
 
 type DistanceStream struct {

@@ -92,7 +92,7 @@ func TestNewActivity(t *testing.T) {
 
 	strava := NewClient(nil)
 
-	resp, err := strava.Activities.New("1234", Activity{
+	resp, err := strava.Activities.New("1234", NewActivity{
 		Name:           "test",
 		Type:           ActivityTypes.Canoening,
 		SportType:      SportTypes.Pickleball,

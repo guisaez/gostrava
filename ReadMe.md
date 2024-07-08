@@ -15,7 +15,7 @@ Features
 ## Import 
 
 ```Shell
-go get github.com/guisaez/go-strava
+go get github.com/guisaez/gostrava
 ```
 
 ## Usage
@@ -23,13 +23,17 @@ go get github.com/guisaez/go-strava
 ### Client
 
 ```go
+import (
+    gostrava "github.com/guisaez/gostrava"
+)
+
 func main() {
 
     // Application Credentials can be obtained here https://www.strava.com/settings/api
     clientId, clientSecret := <clientID>, <clientSecret>
 
     // The third argument corresponds to a custom http.Client, if nil it will use the default http.Client
-    strava := NewStravaClient(clientId, clientSecret, nil)
+   client := gostrava.NewClient(nil)
 
     ...
 }
@@ -52,22 +56,51 @@ APIFunctions are separated into different modules:
 Each module has its own set of allowed methods. Example:
 
 ```go
-func main(){
+    access_token := "<access_token>"
 
-    stravaClient := NewStravaClient(clientId, clientSecret, nil)
+    athlete, err := client.Athletes.GetAuthenticatedAthlete(access_token)
 
-    athlete, err := stravaClient.Athletes.CurrentAthlete(context.Background(), <access_token>)
-    ...
-}
+    athleteActivities, err := client.Activities.ListAthleteActivities(access_token)
 ```
 
 ### OAuth
 
+#### Scopes
 ```go
-oauth := &StravaOAuth{
-    CallbackURL: "http://localhost:8080/callback"
-    Scopes: []string{strava.Scopes.Read}
-    StravaClient: NewStravaClient(clientId, clientSecret, nil)
+
+    var StravaScopes = struct {
+        Read            string
+        ReadAll         string
+        ProfileReadAll  string
+        ProfileWrite    string
+        ActivityRead    string
+        ActivityReadAll string
+        ActivityWrite   string
+    }{
+        "read",
+        "read_all",
+        "profile:read_all",
+        "profile:write",
+        "activity:read",
+        "activity:read_all",
+        "activity:write",
+    }
+```
+
+```go
+
+func main() {
+
+    oauthOpts := gostrava.OAuthOpts{
+        ClientID: "<client_id>"
+        ClientSecret: "<client_secret>"
+        CallbackURL: "http://localhost:8080/callback"
+        Scopes: []string{gostrava.StravaScopes.Read, gostrava.StravaScopes.ActivityWrite}
+    }
+
+    oauth := gostrava.NewStravaOAuth(oauthOpts)
+
+    oauth.MakeAuthCodeUrl(false, "")
 }
 ```
 
@@ -103,7 +136,7 @@ Revoking Access
 ```go
     accessToken = "123421a"
 
-    err := oauth.Revoke(accessToken)
+    err := oauth.RevokeAccess(accessToken)
 ```
 
 Storing Session Info

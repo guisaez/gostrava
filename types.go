@@ -10,29 +10,6 @@ func (dt *DateTime) Parse() (time.Time, error) {
 	return time.Parse(time.RFC3339, string(*dt))
 }
 
-// A set of rolled-up statistics and totals for an athlete
-type ActivityStats struct {
-	AllRideTotals        ActivityTotal `json:"all_ride_totals"`    // The all time ride stats for the athlete.
-	AllRunTotals         ActivityTotal `json:"all_run_totals"`     // The all time run stats for the athlete.
-	AllSwimTotals        ActivityTotal `json:"all_swim_totals"`    // The all time swim stats for the athlete.
-	RecentRideTotals     ActivityTotal `json:"recent_ride_totals"` // The recent (last 4 weeks) ride stats for the athlete.
-	RecentRunTotals      ActivityTotal `json:"recent_run_totals"`  // The recent (last 4 weeks) run stats for the athlete.
-	RecentSwimTotals     ActivityTotal `json:"recent_swim_totals"` // The recent (last 4 weeks) swim stats for the athlete.
-	YearToDateRideTotals ActivityTotal `json:"ytd_ride_totals"`    // The year to date ride stats for the athlete.
-	YearToDateRunTotals  ActivityTotal `json:"ytd_run_totals"`     // The year to date run stats for the athlete.
-	YearToDateSwimTotals ActivityTotal `json:"ytd_swim_totals"`    // The year to date swim stats for the athlete.
-}
-
-// A roll-up of metrics pertaining to a set of activities. Values are in seconds and meters.
-type ActivityTotal struct {
-	Count            int     `json:"count"`             // The number of activities considered in this total.
-	Distance         float32 `json:"distance"`          // The total distance covered by the considered activities.
-	MovingTime       int     `json:"moving_time"`       // The total moving time of the considered activities.
-	ElapsedTime      int     `json:"elapsed_time"`      // The total elapsed time of the considered activities.
-	ElevationGain    float32 `json:"elevation_gain"`    // The total elevation gain of the considered activities.
-	AchievementCount int     `json:"achievement_count"` // The total number of achievements of the considered activities.
-}
-
 // An enumeration of the types an activity may have. Note that this enumeration does not include new sport types
 type ActivityType string
 
@@ -81,40 +58,6 @@ var ActivityTypes = struct {
 	"VirtualRide", "VirtualRun", "Walk", "WeightTraining", "Wheelchair", "Windsurf", "Workout", "Yoga",
 }
 
-type ActivityZone struct {
-	Score               float32               `json:"score"`
-	DistributionBuckets TimedZoneDistribution `json:"distribution_buckets"`
-	Type                ActivityZoneType      `json:"type"`
-	SensorBased         bool                  `json:"sensor_based"`
-	Points              int                   `json:"points"`
-	CustomZones         bool                  `json:"custom_zones"`
-	Max                 int                   `json:"max"`
-}
-
-// May take one of the following values: ActivityZoneTypes.HeartRate, ActivityZoneTypes.Power
-type ActivityZoneType string
-
-var ActivityZoneTypes = struct {
-	HeartRate ActivityZoneType
-	Power     ActivityZoneType
-}{
-	"heartrate", "power",
-}
-
-type CadenceStream struct {
-	BaseStream
-	Data []int `json:"data"` //  The sequence of cadence values for this stream, in rotations per minute
-}
-
-type ClubMembership string
-
-var ClubMembershipStatus = struct {
-	Member  ClubMembership
-	Pending ClubMembership
-}{
-	"member", "pending",
-}
-
 type ClubSportType string
 
 var ClubSportTypes = struct {
@@ -124,14 +67,6 @@ var ClubSportTypes = struct {
 	Other     ClubSportType
 }{
 	"cycling", "running", "triathlon", "other",
-}
-
-type Comment struct {
-	ID         int            `json:"id"`          // The unique identifier of this comment
-	ActivityID int            `json:"activity_id"` // The identifier of the activity this comment is related to
-	Text       string         `json:"text"`        // The content of the comment
-	Athlete    SummaryAthlete `json:"athlete"`     // An instance of SummaryAthlete.
-	CreatedAt  DateTime       `json:"created_at"`  // The time at which this comment was created.
 }
 
 type DetailedGear struct {
@@ -195,40 +130,31 @@ type HeartRateZoneRanges struct {
 }
 
 type Lap struct {
-	ID                 int           `json:"id"`                        // The unique identifier of this lap
-	Activity           MetaActivity  `json:"activity"`                  // An instance of MetaActivity.
-	Athlete            MetaAthlete   `json:"athlete"`                   // AN instance of MetaAthlete.
-	AvgCadence         float32       `json:"average_cadence,omitempty"` // The lap's average cadence
-	AvgHeartRate       float32       `json:"average_heartrate"`         // The lap's average heartrate
-	AvgSpeed           float32       `json:"average_speed"`             // The lap's average speed
-	DeviceWatts        bool          `json:"device_watts"`              // Whether the watts are from a power meter, false if estimated
-	Distance           float32       `json:"distance"`                  // The lap's distance, in meters
-	ElapsedTime        int           `json:"elapsed_time"`              // The lap's elapsed time, in seconds
-	EndIndex           int           `json:"end_index"`                 // The end index of this effort in its activity's stream
-	LapIndex           int           `json:"lap_index"`                 // The index of this lap in the activity it belongs to
-	MaxHeartRate       float32       `json:"max_heartrate"`             // The maximum heartrate of this lap, in beats per minute
-	MaxSpeed           float32       `json:"max_speed"`                 // The maximum speed of this lat, in meters per second
-	MovingTime         int           `json:"moving_time"`               // The lap's moving time, in seconds
-	Name               string        `json:"name"`                      // The name of the lap
-	ResourceState      ResourceState `json:"resource_state"`            //
-	Split              int           `json:"split"`                     // An instance of integer.
-	StartIndex         int           `json:"start_index"`               // The start index of this effort in its activity's stream
-	StartDate          DateTime      `json:"start_date"`                // The time at which the lap was started.
-	StartDateLocal     DateTime      `json:"start_date_local"`          // The time at which the lap was started in the local timezone.
-	TotalElevationGain float32       `json:"total_elevation_gain"`      // The elevation gain of this lap, in meters
-	PaceZone           *int          `json:"pace_zone,omitempty"`       // The athlete's pace zone during this lap
+	ID                 int          `json:"id"`                        // The unique identifier of this lap
+	Activity           MetaActivity `json:"activity"`                  // An instance of MetaActivity.
+	Athlete            MetaAthlete  `json:"athlete"`                   // AN instance of MetaAthlete.
+	AvgCadence         float32      `json:"average_cadence,omitempty"` // The lap's average cadence
+	AvgHeartRate       float32      `json:"average_heartrate"`         // The lap's average heartrate
+	AvgSpeed           float32      `json:"average_speed"`             // The lap's average speed
+	DeviceWatts        bool         `json:"device_watts"`              // Whether the watts are from a power meter, false if estimated
+	Distance           float32      `json:"distance"`                  // The lap's distance, in meters
+	ElapsedTime        int          `json:"elapsed_time"`              // The lap's elapsed time, in seconds
+	EndIndex           int          `json:"end_index"`                 // The end index of this effort in its activity's stream
+	LapIndex           int          `json:"lap_index"`                 // The index of this lap in the activity it belongs to
+	MaxHeartRate       float32      `json:"max_heartrate"`             // The maximum heartrate of this lap, in beats per minute
+	MaxSpeed           float32      `json:"max_speed"`                 // The maximum speed of this lat, in meters per second
+	MovingTime         int          `json:"moving_time"`               // The lap's moving time, in seconds
+	Name               string       `json:"name"`                      // The name of the lap
+	ResourceState      uint8        `json:"resource_state"`            // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
+	Split              int          `json:"split"`                     // An instance of integer.
+	StartIndex         int          `json:"start_index"`               // The start index of this effort in its activity's stream
+	StartDate          DateTime     `json:"start_date"`                // The time at which the lap was started.
+	StartDateLocal     DateTime     `json:"start_date_local"`          // The time at which the lap was started in the local timezone.
+	TotalElevationGain float32      `json:"total_elevation_gain"`      // The elevation gain of this lap, in meters
+	PaceZone           *int         `json:"pace_zone,omitempty"`       // The athlete's pace zone during this lap
 }
 
 type LatLng []float64 // A collection of float objects. A pair of latitude/longitude coordinates, represented as an array of 2 floating point numbers.
-
-type Measurement string
-
-var Measurements = struct {
-	Feet   Measurement
-	Meters Measurement
-}{
-	"feet", "meters",
-}
 
 type PhotosSummary struct {
 	Count   int                   `json:"count"`   // The number of photos
@@ -243,24 +169,14 @@ type PhotosSummaryPrimary struct {
 }
 
 type PolylineMap struct {
-	ID              string        `json:"id"`                       // The identifier of the map
-	Polyline        *string       `json:"polyline,omitempty"`       // The polyline of the map, only returned on detailed representation of an object
-	ResourceState   ResourceState `json:"resource_state,omitempty"` //
-	SummaryPolyline string        `json:"summary_polyline"`         // The summary polyline of the map
+	ID              string  `json:"id"`                       // The identifier of the map
+	Polyline        *string `json:"polyline,omitempty"`       // The polyline of the map, only returned on detailed representation of an object
+	ResourceState   uint8   `json:"resource_state,omitempty"` //
+	SummaryPolyline string  `json:"summary_polyline"`         // The summary polyline of the map
 }
 
 type PowerZoneRanges struct {
 	Zones ZoneRanges `json:"zones"` // An instance of ZoneRanges.
-}
-
-type ResourceState uint8
-
-var ResourceStates = struct {
-	Meta    ResourceState
-	Summary ResourceState
-	Detail  ResourceState
-}{
-	1, 2, 3,
 }
 
 type Route struct {
@@ -299,7 +215,7 @@ var SegmentActivityTypes = struct {
 	Ride SegmentActivityType
 	Run  SegmentActivityType
 }{
-	"Ride", "Rune",
+	"Ride", "Run",
 }
 
 type Split struct {
@@ -389,11 +305,11 @@ var SubRouteTypes = struct {
 }
 
 type SummaryGear struct {
-	ID           string        `json:"id"`             // The gear's unique identifier.
-	ResourceRate ResourceState `json:"resource_state"` // Resource state, indicates level of detail. Possible values: ResourceStates.Meta, ResourceStates.Summary, ResourceStates.Detail
-	Primary      bool          `json:"primary"`        // Whether this gear's is the owner's default one.
-	Name         string        `json:"name"`           // The gear's name.
-	Distance     float32       `json:"distance"`       // The distance logged with this gear.
+	ID           string  `json:"id"`             // The gear's unique identifier.
+	ResourceRate uint8   `json:"resource_state"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
+	Primary      bool    `json:"primary"`        // Whether this gear's is the owner's default one.
+	Name         string  `json:"name"`           // The gear's name.
+	Distance     float32 `json:"distance"`       // The distance logged with this gear.
 }
 
 type SummaryPRSegmentEffort struct {
