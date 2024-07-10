@@ -17,17 +17,3 @@ func (e *Error) Error() string {
 	err, _ := json.Marshal(e)
 	return string(err)
 }
-
-type StravaOAuthError struct {
-	Message string
-}
-
-func (e *StravaOAuthError) Error() string {
-	return e.Message
-}
-
-var (
-	InvalidCodeError = &StravaOAuthError{"invalid code"}
-	AccessDeniedError     = &StravaOAuthError{"access_denied"}
-	InternalServerError = &Error{Message: "internal server error"}
-)
