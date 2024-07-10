@@ -21,6 +21,13 @@ type Client struct {
 
 	// HTTP Client used to communicate with the server
 	httpClient *http.Client
+
+	OAuth   *OAuthService
+	Athlete *AthleteService
+}
+
+type service struct {
+	client *Client
 }
 
 // Initializes a new Strava Client
@@ -35,6 +42,9 @@ func NewClient(httpClient *http.Client) *Client {
 		BaseURL:    baseUrl,
 		httpClient: httpClient,
 	}
+
+	c.OAuth = &OAuthService{client: c}
+	c.Athlete = &AthleteService{client: c}
 
 	return c
 }
