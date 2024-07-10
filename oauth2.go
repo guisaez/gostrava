@@ -1,6 +1,7 @@
 package gostrava
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strings"
@@ -36,6 +37,15 @@ type OAuthService struct {
 	client *Client
 }
 
+func (oauth *OAuthService) Register(clientID, clientSecret, callBackUrl string, scopes []Scope) *OAuthService {
+	oauth.ClientID = clientID
+	oauth.ClientSecret = clientSecret
+	oauth.CallbackURL = callBackUrl
+	oauth.Scopes = scopes
+
+	return oauth
+}
+
 // Generates the authentication url that the user will be redirected to
 // in order to initiate the OAuthFlow
 // Args:
@@ -44,15 +54,15 @@ type OAuthService struct {
 //   - state: Returned in the redirect URI. Useful if the authentication is done from various points in an app
 func (oauth *OAuthService) MakeAuthCodeURL(force bool, state ...string) *url.URL {
 
-	url, _ := url.Parse(oauthBaseUrl)
-	url = url.JoinPath("authroize")
+	authorizeUrl, _ := url.Parse(oauthBaseUrl)
+	authorizeUrl = authorizeUrl.JoinPath("authorize")
 
-	queryParams := url.Query()
+	queryParams := authorizeUrl.Query()
 	queryParams.Set("response_type", "code")
 	queryParams.Set("client_id", oauth.ClientID)
 	queryParams.Set("client_secret", oauth.ClientSecret)
 	queryParams.Set("redirect_uri", oauth.CallbackURL)
-	queryParams.Set("scope", joinScopes(oauth.Scopes))
+	queryParams.Set("scope", JoinScopes(oauth.Scopes))
 
 	if force {
 		queryParams.Set("approval_prompt", "force")
@@ -64,7 +74,9 @@ func (oauth *OAuthService) MakeAuthCodeURL(force bool, state ...string) *url.URL
 		queryParams.Set("state", state[0])
 	}
 
-	return url
+	authorizeUrl.RawQuery = queryParams.Encode()
+
+	return authorizeUrl
 }
 
 type Authorization struct {
@@ -75,6 +87,10 @@ type Authorization struct {
 	TokenType    *string         `json:"token_type,omitempty"` // Bearer
 	Athlete      *SummaryAthlete `json:"athlete,omitempty"`    // A summary of the athlete information
 	Scopes       []Scope         `json:"scopes,omitempty"`     // Scopes the user accepted
+}
+
+func (a *Authorization) String() string {
+	return Stringify(a)
 }
 
 // This function handles the exchange step of an authorization code for an acces token in the
@@ -175,15 +191,15 @@ func (e *OAuthError) Error() string {
 }
 
 // OAuthHandler returns an HTTP handler function for handling OAuth authorization responses.
-// This handler processes the incoming HTTP request to extract OAuth parameters and invokes 
+// This handler processes the incoming HTTP request to extract OAuth parameters and invokes
 // appropriate callback functions based on success or error scenarios.
 //
 // Parameters:
-// - onSuccess: A callback function that will be invoked when the OAuth authorization is successful. 
-//   It accepts an authorization token of type *Authorization, an HTTP response writer (http.ResponseWriter),
-//   and an HTTP request (http.Request).
-// - onError: A callback function that will be invoked when there is an error during the OAuth authorization process. 
-//   It accepts an error (error), an HTTP response writer (http.ResponseWriter), and an HTTP request (http.Request).
+//   - onSuccess: A callback function that will be invoked when the OAuth authorization is successful.
+//     It accepts an authorization token of type *Authorization, an HTTP response writer (http.ResponseWriter),
+//     and an HTTP request (http.Request).
+//   - onError: A callback function that will be invoked when there is an error during the OAuth authorization process.
+//     It accepts an error (error), an HTTP response writer (http.ResponseWriter), and an HTTP request (http.Request).
 //
 // Returns:
 // - An HTTP handler function (http.HandlerFunc) that processes the OAuth authorization response.
@@ -203,7 +219,7 @@ func (oauth *OAuthService) OAuthHandler(
 		code := query.Get("code")
 		scope := query.Get("scope")
 
-		auth, err := oauth.Exchange(code, splitScopes(scope))
+		auth, err := oauth.Exchange(code, SplitScopes(scope))
 		if err != nil {
 			onError(err, w, r)
 		}
@@ -214,19 +230,25 @@ func (oauth *OAuthService) OAuthHandler(
 
 // ------- Utils --------
 
-func splitScopes(scopes string) []Scope {
-	parsedScopes := make([]Scope, len(scopes))
-	for i, scope := range strings.Split(scopes, ",") {
+func SplitScopes(scopes string) []Scope {
+	splittedScopes := strings.Split(scopes, ",")
+	parsedScopes := make([]Scope, len(splittedScopes))
+	for i, scope := range splittedScopes {
 		parsedScopes[i] = Scope(scope)
 	}
 	return parsedScopes
 }
 
-func joinScopes(scopes []Scope) string {
+func JoinScopes(scopes []Scope) string {
 	stringScopes := make([]string, len(scopes))
 	for i, scope := range scopes {
 		stringScopes[i] = string(scope)
 	}
 
 	return strings.Join(stringScopes, ",")
+}
+
+func Stringify(message interface{}) string {
+	bytes, _ := json.Marshal(message)
+	return string(bytes)
 }
