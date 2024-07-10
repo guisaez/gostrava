@@ -1,9 +1,27 @@
 package gostrava
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
-type DateTime string
+type TimeStamp struct {
+	Time time.Time
+}
 
-func (dt *DateTime) Parse() (time.Time, error) {
-	return time.Parse(time.RFC3339, string(*dt))
+func (t *TimeStamp) UnmarshalJSON(data []byte) error {
+	var timeStr string
+	err := json.Unmarshal(data, &timeStr)
+	if err != nil {
+		return err
+	}
+
+	parsedTime, err := time.Parse(time.RFC3339, timeStr)
+	if err != nil {
+		return err
+	}
+
+	t.Time = parsedTime
+
+	return nil
 }

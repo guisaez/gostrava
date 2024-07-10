@@ -7,27 +7,35 @@ import (
 )
 
 type MetaAthlete struct {
-	ID            *int   `json:"id,omitempty"`   // The unique identifier of the athlete
-	ResourceState *uint8 `json:"resource_state"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
+	ID            *int   `json:"id,omitempty"`             // The unique identifier of the athlete
+	ResourceState *uint8 `json:"resource_state,omitempty"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
+}
+
+func (a *MetaAthlete) String() string {
+	return Stringify(a)
 }
 
 type SummaryAthlete struct {
 	MetaAthlete
-	BadgeTypeId   *uint8    `json:"badge_type_id,omitempty"`
-	Bio           *string   `json:"bio,omitempty"`            // The athlete's bio.
-	City          *string   `json:"city,omitempty"`           // The athlete's city.
-	Country       *string   `json:"country,omitempty"`        // The athlete's country.
-	CreatedAt     *DateTime `json:"created_at,omitempty"`     // The time at which the athlete was created.
-	FirstName     *string   `json:"firstname,omitempty"`      // The athlete's first name.
-	LastName      *string   `json:"lastname,omitempty"`       // The athlete's last name.
-	Premium       *bool     `json:"premium,omitempty"`        // Deprecated. Use summit field instead. Whether the athlete has any Summit subscription.
-	Profile       *string   `json:"profile,omitempty"`        // URL to a 124x124 pixel profile picture.
-	ProfileMedium *string   `json:"profile_medium,omitempty"` // URL to a 62x62 pixel profile picture.
-	Sex           *string   `json:"sex,omitempty"`            // The athlete's sex. May take one of the following values: M, F
-	State         *string   `json:"state,omitempty"`          // The athlete's state or geographical region.
-	Summit        *bool     `json:"summit,omitempty"`         // Whether the athlete has any Summit subscription.
-	UpdatedAt     *DateTime `json:"updated_at,omitempty"`     // The time at which the athlete was last updated.
-	Weight        *float64  `json:"weight,omitempty"`         // The athlete's weight.
+	BadgeTypeId   *uint8     `json:"badge_type_id,omitempty"`
+	Bio           *string    `json:"bio,omitempty"`            // The athlete's bio.
+	City          *string    `json:"city,omitempty"`           // The athlete's city.
+	Country       *string    `json:"country,omitempty"`        // The athlete's country.
+	CreatedAt     *TimeStamp `json:"created_at,omitempty"`     // The time at which the athlete was created.
+	FirstName     *string    `json:"firstname,omitempty"`      // The athlete's first name.
+	LastName      *string    `json:"lastname,omitempty"`       // The athlete's last name.
+	Premium       *bool      `json:"premium,omitempty"`        // Deprecated. Use summit field instead. Whether the athlete has any Summit subscription.
+	Profile       *string    `json:"profile,omitempty"`        // URL to a 124x124 pixel profile picture.
+	ProfileMedium *string    `json:"profile_medium,omitempty"` // URL to a 62x62 pixel profile picture.
+	Sex           *string    `json:"sex,omitempty"`            // The athlete's sex. May take one of the following values: M, F
+	State         *string    `json:"state,omitempty"`          // The athlete's state or geographical region.
+	Summit        *bool      `json:"summit,omitempty"`         // Whether the athlete has any Summit subscription.
+	UpdatedAt     *TimeStamp `json:"updated_at,omitempty"`     // The time at which the athlete was last updated.
+	Weight        *float64   `json:"weight,omitempty"`         // The athlete's weight.
+}
+
+func (a *SummaryAthlete) String() string {
+	return Stringify(a)
 }
 
 type DetailedAthlete struct {
@@ -47,6 +55,10 @@ type DetailedAthlete struct {
 	// Clubs                 []SummaryClub `json:"clubs,omitempty"` // The athlete's clubs.
 	// Bikes                 []SummaryGear `json:"bikes,omitempty"` // The athlete's bikes.
 	// Shoes                 []SummaryGear `json:"shoes,omitempty"` // The athlete's shoes.
+}
+
+func (a *DetailedAthlete) String() string {
+	return Stringify(a)
 }
 
 type AthleteService service
@@ -77,6 +89,10 @@ type Zones struct {
 	Power    *PowerZoneRanges     `json:"power,omitempty"`      // An instance of PowerZoneRanges.
 }
 
+func (z *Zones) String() string {
+	return Stringify(z)
+}
+
 type HeartRateZoneRanges struct {
 	CustomZones *bool       `json:"custom_zone,omitempty"` // Whether the athlete has set their own custom heart rate zones
 	Zones       *ZoneRanges `json:"zones,omitempty"`       // An instance of ZoneRanges.
@@ -97,7 +113,7 @@ type ZoneRange struct {
 func (s *AthleteService) GetZones(accessToken string) (*Zones, error) {
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        "zones",
+		Path:        "athlete/zones",
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
 	})
@@ -126,6 +142,10 @@ type ActivityStats struct {
 	YearToDateSwimTotals *ActivityTotal `json:"ytd_swim_totals"`    // The year to date swim stats for the athlete.
 }
 
+func (as *ActivityStats) String() string {
+	return Stringify(as)
+}
+
 // A roll-up of metrics pertaining to a set of activities. Values are in seconds and meters.
 type ActivityTotal struct {
 	Count            *int     `json:"count,omitempty"`             // The number of activities considered in this total.
@@ -140,7 +160,7 @@ type ActivityTotal struct {
 func (s *AthleteService) GetAthleteStats(accessToken string, id int) (*ActivityStats, error) {
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%d/stats", id),
+		Path:        fmt.Sprintf("athletes/%d/stats", id),
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
 	})
@@ -157,7 +177,7 @@ func (s *AthleteService) GetAthleteStats(accessToken string, id int) (*ActivityS
 }
 
 type UpdatedAthlete struct {
-	Weight float32 // The weigh of the athlete in kilograms.
+	Weight   float32 // The weigh of the athlete in kilograms.
 }
 
 // Updates the authenticated user. Requires profile:write scope

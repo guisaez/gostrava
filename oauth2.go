@@ -1,7 +1,6 @@
 package gostrava
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"strings"
@@ -28,19 +27,15 @@ type OAuthService struct {
 	// The application's secret, obtained during registration
 	ClientSecret string
 
-	// CallbackURL
-	CallbackURL string
-
 	// Scopes the application will be trying to access
 	Scopes []Scope
 
 	client *Client
 }
 
-func (oauth *OAuthService) Register(clientID, clientSecret, callBackUrl string, scopes []Scope) *OAuthService {
+func (oauth *OAuthService) Register(clientID, clientSecret string, scopes []Scope) *OAuthService {
 	oauth.ClientID = clientID
 	oauth.ClientSecret = clientSecret
-	oauth.CallbackURL = callBackUrl
 	oauth.Scopes = scopes
 
 	return oauth
@@ -52,7 +47,7 @@ func (oauth *OAuthService) Register(clientID, clientSecret, callBackUrl string, 
 //   - force: If true, it will always show the authorization prompt even if the user has already
 //     authorized the current appliocation.
 //   - state: Returned in the redirect URI. Useful if the authentication is done from various points in an app
-func (oauth *OAuthService) MakeAuthCodeURL(force bool, state ...string) *url.URL {
+func (oauth *OAuthService) MakeAuthCodeURL(callbackUrl string, force bool, state ...string) *url.URL {
 
 	authorizeUrl, _ := url.Parse(oauthBaseUrl)
 	authorizeUrl = authorizeUrl.JoinPath("authorize")
@@ -61,7 +56,7 @@ func (oauth *OAuthService) MakeAuthCodeURL(force bool, state ...string) *url.URL
 	queryParams.Set("response_type", "code")
 	queryParams.Set("client_id", oauth.ClientID)
 	queryParams.Set("client_secret", oauth.ClientSecret)
-	queryParams.Set("redirect_uri", oauth.CallbackURL)
+	queryParams.Set("redirect_uri", callbackUrl)
 	queryParams.Set("scope", JoinScopes(oauth.Scopes))
 
 	if force {
@@ -80,10 +75,10 @@ func (oauth *OAuthService) MakeAuthCodeURL(force bool, state ...string) *url.URL
 }
 
 type Authorization struct {
-	AccessToken  *string         `json:"access_token"`
-	ExpiresAt    *int64          `json:"expires_at"`           // The number of seconds since the epoch when the provided access token will expire
-	ExpiresIn    *int            `json:"expires_in"`           // Seconds until the short-lived access token will expire
-	RefreshToken *string         `json:"refresh_token"`        // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work
+	AccessToken  string          `json:"access_token"`
+	ExpiresAt    int64           `json:"expires_at"`           // The number of seconds since the epoch when the provided access token will expire
+	ExpiresIn    int             `json:"expires_in"`           // Seconds until the short-lived access token will expire
+	RefreshToken string          `json:"refresh_token"`        // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work
 	TokenType    *string         `json:"token_type,omitempty"` // Bearer
 	Athlete      *SummaryAthlete `json:"athlete,omitempty"`    // A summary of the athlete information
 	Scopes       []Scope         `json:"scopes,omitempty"`     // Scopes the user accepted
@@ -97,7 +92,7 @@ func (a *Authorization) String() string {
 // OAuth 2.0 authorization code grant flow.
 //
 // POST: "https://www.strava.com/oauth/token"
-func (oauth *OAuthService) Exchange(code string, scopes []Scope) (*Authorization, error) {
+func (oauth *OAuthService) Exchange(code string, scopes string) (*Authorization, error) {
 	formData := url.Values{
 		"client_id":     {oauth.ClientID},
 		"client_secret": {oauth.ClientSecret},
@@ -122,7 +117,7 @@ func (oauth *OAuthService) Exchange(code string, scopes []Scope) (*Authorization
 		return nil, err
 	}
 
-	auth.Scopes = scopes
+	auth.Scopes = SplitScopes(scopes)
 
 	return auth, nil
 }
@@ -217,9 +212,9 @@ func (oauth *OAuthService) OAuthHandler(
 		}
 
 		code := query.Get("code")
-		scope := query.Get("scope")
+		scopes := query.Get("scope")
 
-		auth, err := oauth.Exchange(code, SplitScopes(scope))
+		auth, err := oauth.Exchange(code, scopes)
 		if err != nil {
 			onError(err, w, r)
 		}
@@ -246,9 +241,4 @@ func JoinScopes(scopes []Scope) string {
 	}
 
 	return strings.Join(stringScopes, ",")
-}
-
-func Stringify(message interface{}) string {
-	bytes, _ := json.Marshal(message)
-	return string(bytes)
 }
