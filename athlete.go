@@ -89,10 +89,6 @@ type Zones struct {
 	Power    *PowerZoneRanges     `json:"power,omitempty"`      // An instance of PowerZoneRanges.
 }
 
-func (z *Zones) String() string {
-	return Stringify(z)
-}
-
 type HeartRateZoneRanges struct {
 	CustomZones *bool       `json:"custom_zone,omitempty"` // Whether the athlete has set their own custom heart rate zones
 	Zones       *ZoneRanges `json:"zones,omitempty"`       // An instance of ZoneRanges.
