@@ -22,8 +22,16 @@ type Client struct {
 	// HTTP Client used to communicate with the server
 	httpClient *http.Client
 
-	OAuth   *OAuthService
-	Athlete *AthleteService
+	OAuth          *OAuthService
+	Athlete        *AthleteService
+	Activity       *ActivityService
+	Club           *ClubService
+	Gear           *GearsService
+	Route          *RouteService
+	Streams        *StreamsService
+	Segments       *SegmentsService
+	Uploads        *UploadService
+	SegmentEfforts *SegmentEffortsService
 }
 
 type service struct {
@@ -45,6 +53,14 @@ func NewClient(httpClient *http.Client) *Client {
 
 	c.OAuth = &OAuthService{client: c}
 	c.Athlete = &AthleteService{client: c}
+	c.Activity = &ActivityService{client: c}
+	c.Club = &ClubService{client: c}
+	c.Gear = &GearsService{client: c}
+	c.Route = &RouteService{client: c}
+	c.Segments = &SegmentsService{client: c}
+	c.SegmentEfforts = &SegmentEffortsService{client: c}
+	c.Uploads = &UploadService{client: c}
+	c.Streams = &StreamsService{client: c}
 
 	return c
 }
@@ -152,15 +168,28 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 	}
 
 	if v != nil {
-		err := json.NewDecoder(r).Decode(&v)
-
-		if c.Logger != nil {
-			c.Logger(resp)
+		contentType := resp.Header.Get("Content-Type")
+		if contentType == "application/json" {
+			err := json.NewDecoder(r).Decode(v)
+			if c.Logger != nil {
+				c.Logger(resp)
+			}
+			if err != nil {
+				return err
+			}
+		} else {
+			if b, ok := v.(*[]byte); ok {
+				*b = buf.Bytes()
+			} else if w, ok := v.(io.Writer); ok {
+				_, err := io.Copy(w, &buf)
+				if err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("v should be a *[]byte or io.Writer when downloading a file")
+			}
 		}
 
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
