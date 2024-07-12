@@ -165,6 +165,7 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 		if contentType == "application/json; charset=utf-8" {
 			err := json.NewDecoder(r).Decode(v)
 			if err != nil {
+				fmt.Println(string(buf.String()))
 				return err
 			}
 		} else {
@@ -181,7 +182,7 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 		}
 	}
 
-	fmt.Println(buf.String())
+	fmt.Println(string(buf.String()))
 
 	return nil
 }

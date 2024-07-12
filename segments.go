@@ -13,7 +13,7 @@ const segments string = "segments"
 
 // Returns the specified segment, read_all scope required in order to retrieve athlete specific segment information,
 // or to retrieve private segments.
-func (s *SegmentsService) GetById(accessToken string, id int64) (*SegmentDetailed, error) {
+func (s *SegmentsService) GetById(accessToken string, id int) (*SegmentDetailed, error) {
 	req, err := s.client.newRequest(requestOpts{
 		Path:        fmt.Sprintf("%s/%d", segments, id),
 		Method:      http.MethodGet,
@@ -49,20 +49,18 @@ type ExploreSegmentsOpts struct {
 }
 
 // Returns the top 10 segments matching a specified query.
-func (s *SegmentsService) ExploreSegments(accessToken string, bounds Bounds, opt *ExploreSegmentsOpts) ([]ExplorerResponse, error) {
+func (s *SegmentsService) ExploreSegments(accessToken string, bounds Bounds, opt ExploreSegmentsOpts) (*ExplorerResponse, error) {
 	params := url.Values{}
 	params.Set("bounds", bounds.String())
 
-	if opt != nil {
-		if opt.ActivityType != "" {
-			params.Set("activity_type", opt.ActivityType)
-		}
-		if opt.MinCat > 0 {
-			params.Set("min_cat", fmt.Sprintf("%d", opt.MinCat))
-		}
-		if opt.MaxCat > 0 {
-			params.Set("max_cat", fmt.Sprintf("%d", opt.MaxCat))
-		}
+	if opt.ActivityType != "" {
+		params.Set("activity_type", opt.ActivityType)
+	}
+	if opt.MinCat > 0 {
+		params.Set("min_cat", fmt.Sprintf("%d", opt.MinCat))
+	}
+	if opt.MaxCat > 0 {
+		params.Set("max_cat", fmt.Sprintf("%d", opt.MaxCat))
 	}
 
 	req, err := s.client.newRequest(requestOpts{
@@ -75,7 +73,7 @@ func (s *SegmentsService) ExploreSegments(accessToken string, bounds Bounds, opt
 		return nil, err
 	}
 
-	resp := []ExplorerResponse{}
+	resp := new(ExplorerResponse)
 	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
 	}
@@ -84,7 +82,7 @@ func (s *SegmentsService) ExploreSegments(accessToken string, bounds Bounds, opt
 }
 
 // List of the authenticated athlete's starred segments. Private segments are filtered out unless requested by a token with read_all scope.
-func (s *SegmentsService) ListStarredSegments(accessToken string, opt *RequestParams) ([]SummarySegment, error) {
+func (s *SegmentsService) ListStarredSegments(accessToken string, opt *RequestParams) ([]SegmentSummary, error) {
 	params := url.Values{}
 	if opt != nil {
 		if opt.Page > 0 {
@@ -105,7 +103,7 @@ func (s *SegmentsService) ListStarredSegments(accessToken string, opt *RequestPa
 		return nil, err
 	}
 
-	resp := []SummarySegment{}
+	resp := []SegmentSummary{}
 	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
 	}
@@ -114,7 +112,7 @@ func (s *SegmentsService) ListStarredSegments(accessToken string, opt *RequestPa
 }
 
 // Stars/Unstars the given segment for the authenticated athlete. Requires profile:write scope.
-func (s *SegmentsService) StarSegment(accessToken string, id int64, starred bool) (*SegmentDetailed, error) {
+func (s *SegmentsService) StarSegment(accessToken string, id int, starred bool) (*SegmentDetailed, error) {
 	formData := url.Values{}
 	formData.Add("starred", fmt.Sprint(starred))
 

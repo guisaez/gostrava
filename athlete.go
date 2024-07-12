@@ -53,7 +53,7 @@ func (s *AthleteService) GetZones(accessToken string) (*Zones, error) {
 }
 
 // Returns the activity stats of an athlete. Only includes data from activities set to Everyone's visibility.
-func (s *AthleteService) GetStats(accessToken string, id int) (*ActivityStats, error) {
+func (s *AthleteService) GetAthleteStats(accessToken string, id int) (*ActivityStats, error) {
 	req, err := s.client.newRequest(requestOpts{
 		Path:        fmt.Sprintf("%s/%d/stats", athletes, id),
 		Method:      http.MethodGet,
