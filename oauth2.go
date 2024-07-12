@@ -45,10 +45,9 @@ func (oauth *OAuthService) Register(clientID, clientSecret string, scopes []Scop
 // in order to initiate the OAuthFlow
 // Args:
 //   - force: If true, it will always show the authorization prompt even if the user has already
-//     authorized the current appliocation.
+//     authorized the current application.
 //   - state: Returned in the redirect URI. Useful if the authentication is done from various points in an app
 func (oauth *OAuthService) MakeAuthCodeURL(callbackUrl string, force bool, state ...string) *url.URL {
-
 	authorizeUrl, _ := url.Parse(oauthBaseUrl)
 	authorizeUrl = authorizeUrl.JoinPath("authorize")
 
@@ -57,7 +56,7 @@ func (oauth *OAuthService) MakeAuthCodeURL(callbackUrl string, force bool, state
 	queryParams.Set("client_id", oauth.ClientID)
 	queryParams.Set("client_secret", oauth.ClientSecret)
 	queryParams.Set("redirect_uri", callbackUrl)
-	queryParams.Set("scope", JoinScopes(oauth.Scopes))
+	queryParams.Set("scope", joinScopes(oauth.Scopes))
 
 	if force {
 		queryParams.Set("approval_prompt", "force")
@@ -80,7 +79,7 @@ type Authorization struct {
 	ExpiresIn    int             `json:"expires_in"`           // Seconds until the short-lived access token will expire
 	RefreshToken string          `json:"refresh_token"`        // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work
 	TokenType    *string         `json:"token_type,omitempty"` // Bearer
-	Athlete      *SummaryAthlete `json:"athlete,omitempty"`    // A summary of the athlete information
+	Athlete      *AthleteSummary `json:"athlete,omitempty"`    // A summary of the athlete information
 	Scopes       []Scope         `json:"scopes,omitempty"`     // Scopes the user accepted
 }
 
@@ -117,13 +116,13 @@ func (oauth *OAuthService) Exchange(code string, scopes string) (*Authorization,
 		return nil, err
 	}
 
-	auth.Scopes = SplitScopes(scopes)
+	auth.Scopes = splitScopes(scopes)
 
 	return auth, nil
 }
 
 // This function handles the process of using a refresh token to obtain a new access token in the
-// OAuth 2.0 authoriation flow.
+// OAuth 2.0 authorization flow.
 //
 // POST "https://www.strava.com/oauth/refresh"
 func (oauth *OAuthService) Refresh(refreshToken string) (*Authorization, error) {
@@ -200,7 +199,8 @@ func (e *OAuthError) Error() string {
 // - An HTTP handler function (http.HandlerFunc) that processes the OAuth authorization response.
 func (oauth *OAuthService) OAuthHandler(
 	onSuccess func(token *Authorization, w http.ResponseWriter, r *http.Request),
-	onError func(err error, w http.ResponseWriter, r *http.Request)) http.HandlerFunc {
+	onError func(err error, w http.ResponseWriter, r *http.Request),
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 
@@ -225,7 +225,7 @@ func (oauth *OAuthService) OAuthHandler(
 
 // ------- Utils --------
 
-func SplitScopes(scopes string) []Scope {
+func splitScopes(scopes string) []Scope {
 	splittedScopes := strings.Split(scopes, ",")
 	parsedScopes := make([]Scope, len(splittedScopes))
 	for i, scope := range splittedScopes {
@@ -234,7 +234,7 @@ func SplitScopes(scopes string) []Scope {
 	return parsedScopes
 }
 
-func JoinScopes(scopes []Scope) string {
+func joinScopes(scopes []Scope) string {
 	stringScopes := make([]string, len(scopes))
 	for i, scope := range scopes {
 		stringScopes[i] = string(scope)

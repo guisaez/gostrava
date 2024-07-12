@@ -6,18 +6,25 @@ import (
 	"net/url"
 )
 
-type MetaAthlete struct {
-	ID            *int   `json:"id,omitempty"`             // The unique identifier of the athlete
-	ResourceState *uint8 `json:"resource_state,omitempty"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
+type AthleteService service
+
+const (
+	athlete  string = "athlete"
+	athletes string = "athletes"
+)
+
+type AthleteMeta struct {
+	ID            *int  `json:"id"`             // The unique identifier of the athlete
+	ResourceState *int8 `json:"resource_state"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
 }
 
-func (a *MetaAthlete) String() string {
+func (a *AthleteMeta) String() string {
 	return Stringify(a)
 }
 
-type SummaryAthlete struct {
-	MetaAthlete
-	BadgeTypeId   *uint8     `json:"badge_type_id,omitempty"`
+type AthleteSummary struct {
+	AthleteMeta
+	BadgeTypeId   uint8      `json:"badge_type_id,omitempty"`
 	Bio           *string    `json:"bio,omitempty"`            // The athlete's bio.
 	City          *string    `json:"city,omitempty"`           // The athlete's city.
 	Country       *string    `json:"country,omitempty"`        // The athlete's country.
@@ -34,41 +41,38 @@ type SummaryAthlete struct {
 	Weight        *float64   `json:"weight,omitempty"`         // The athlete's weight.
 }
 
-func (a *SummaryAthlete) String() string {
+func (a *AthleteSummary) String() string {
 	return Stringify(a)
 }
 
-type DetailedAthlete struct {
-	SummaryAthlete
-	AthleteType           *int8   `json:"athlete_type,omitempty"`
-	Blocked               *bool   `json:"blocked,omitempty"`
-	CanFollow             *bool   `json:"can_follow,omitempty"`
-	DatePreference        *string `json:"date_preference,omitempty"`
-	FollowerCount         *int    `json:"follower_count,omitempty"` // The athlete's follower count.
-	FriendCount           *int    `json:"friend_count,omitempty"`   // The athlete's friend count.
-	IsWinBackViaUpload    *bool   `json:"is_winback_via_upload,omitempty"`
-	IsWinBackViaView      *bool   `json:"is_winback_via_view,omitempty"`
-	MeasurementPreference *string `json:"measurement_preference,omitempty"` // The athlete's preferred unit system. May take one of the following values: feet, meters
-	MutualFriendCount     *int    `json:"mutual_friend_count,omitempty"`
-	PostableClubsCount    *int    `json:"postable_clubs_count,omitempty"`
-	FTP                   *int    `json:"ftp,omitempty"` // The athlete's FTP (Functional Threshold Power).
-	// Clubs                 []SummaryClub `json:"clubs,omitempty"` // The athlete's clubs.
+type AthleteDetailed struct {
+	AthleteSummary
+	AthleteType           *int8         `json:"athlete_type,omitempty"`
+	Blocked               *bool         `json:"blocked,omitempty"`
+	CanFollow             *bool         `json:"can_follow,omitempty"`
+	DatePreference        *string       `json:"date_preference,omitempty"`
+	FollowerCount         *int          `json:"follower_count,omitempty"` // The athlete's follower count.
+	FriendCount           *int          `json:"friend_count,omitempty"`   // The athlete's friend count.
+	IsWinBackViaUpload    *bool         `json:"is_winback_via_upload,omitempty"`
+	IsWinBackViaView      *bool         `json:"is_winback_via_view,omitempty"`
+	MeasurementPreference *string       `json:"measurement_preference,omitempty"` // The athlete's preferred unit system. May take one of the following values: feet, meters
+	MutualFriendCount     *int          `json:"mutual_friend_count,omitempty"`
+	PostableClubsCount    *int          `json:"postable_clubs_count,omitempty"`
+	FTP                   *int          `json:"ftp,omitempty"`   // The athlete's FTP (Functional Threshold Power).
+	Clubs                 []ClubSummary `json:"clubs,omitempty"` // The athlete's clubs.
 	// Bikes                 []SummaryGear `json:"bikes,omitempty"` // The athlete's bikes.
 	// Shoes                 []SummaryGear `json:"shoes,omitempty"` // The athlete's shoes.
 }
 
-func (a *DetailedAthlete) String() string {
+func (a *AthleteDetailed) String() string {
 	return Stringify(a)
 }
 
-type AthleteService service
-
 // Returns the currently authenticated athlete. Tokens with profile:read_all scope will receive
 // a detailed athlete representation; all others will receive a SummaryAthlete representation
-func (s *AthleteService) GetAuthenticatedAthlete(accessToken string) (*DetailedAthlete, error) {
-
+func (s *AthleteService) GetAuthenticatedAthlete(accessToken string) (*AthleteDetailed, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        "athlete",
+		Path:        athlete,
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
 	})
@@ -76,7 +80,7 @@ func (s *AthleteService) GetAuthenticatedAthlete(accessToken string) (*DetailedA
 		return nil, err
 	}
 
-	resp := new(DetailedAthlete)
+	resp := new(AthleteDetailed)
 	if err := s.client.do(req, resp); err != nil {
 		return nil, err
 	}
@@ -89,27 +93,10 @@ type Zones struct {
 	Power    *PowerZoneRanges     `json:"power,omitempty"`      // An instance of PowerZoneRanges.
 }
 
-type HeartRateZoneRanges struct {
-	CustomZones *bool       `json:"custom_zone,omitempty"` // Whether the athlete has set their own custom heart rate zones
-	Zones       *ZoneRanges `json:"zones,omitempty"`       // An instance of ZoneRanges.
-}
-
-type PowerZoneRanges struct {
-	Zones *ZoneRanges `json:"zones,omitempty"` // An instance of ZoneRanges.
-}
-
-type ZoneRanges []ZoneRange
-
-type ZoneRange struct {
-	Max *int `json:"max,omitempty"` // The maximum value in the range.
-	Min *int `json:"min,omitempty"` // The minimum value in the range.
-}
-
 // Returns the current athlete's heart rate and power zones. Requires profile:read_all.
 func (s *AthleteService) GetZones(accessToken string) (*Zones, error) {
-
 	req, err := s.client.newRequest(requestOpts{
-		Path:        "athlete/zones",
+		Path:        fmt.Sprintf("%s/zones", athlete),
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
 	})
@@ -142,21 +129,10 @@ func (as *ActivityStats) String() string {
 	return Stringify(as)
 }
 
-// A roll-up of metrics pertaining to a set of activities. Values are in seconds and meters.
-type ActivityTotal struct {
-	Count            *int     `json:"count,omitempty"`             // The number of activities considered in this total.
-	Distance         *float32 `json:"distance,omitempty"`          // The total distance covered by the considered activities.
-	MovingTime       *int     `json:"moving_time,omitempty"`       // The total moving time of the considered activities.
-	ElapsedTime      *int     `json:"elapsed_time,omitempty"`      // The total elapsed time of the considered activities.
-	ElevationGain    *float32 `json:"elevation_gain,omitempty"`    // The total elevation gain of the considered activities.
-	AchievementCount *int     `json:"achievement_count,omitempty"` // The total number of achievements of the considered activities.
-}
-
 // Returns the activity stats of an athlete. Only includes data from activities set to Everyone's visibility.
 func (s *AthleteService) GetAthleteStats(accessToken string, id int) (*ActivityStats, error) {
-
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("athletes/%d/stats", id),
+		Path:        fmt.Sprintf("%s/%d/stats", athletes, id),
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
 	})
@@ -173,17 +149,17 @@ func (s *AthleteService) GetAthleteStats(accessToken string, id int) (*ActivityS
 }
 
 type UpdatedAthlete struct {
-	Weight   float32 // The weigh of the athlete in kilograms.
+	Weight float32 // The weigh of the athlete in kilograms.
 }
 
 // Updates the authenticated user. Requires profile:write scope
-func (s *AthleteService) Update(accessToken string, updatedAthlete UpdatedAthlete) (*DetailedAthlete, error) {
+func (s *AthleteService) Update(accessToken string, updatedAthlete UpdatedAthlete) (*AthleteDetailed, error) {
 	params := url.Values{}
 
 	params.Set("weight", fmt.Sprintf("%.2f", updatedAthlete.Weight))
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        "athlete",
+		Path:        athlete,
 		Method:      http.MethodPut,
 		AccessToken: accessToken,
 		Body:        params,
@@ -192,7 +168,7 @@ func (s *AthleteService) Update(accessToken string, updatedAthlete UpdatedAthlet
 		return nil, err
 	}
 
-	resp := new(DetailedAthlete)
+	resp := new(AthleteDetailed)
 	if err := s.client.do(req, resp); err != nil {
 		return nil, err
 	}
