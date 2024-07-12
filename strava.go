@@ -16,16 +16,13 @@ type Client struct {
 	// Base URL user for API request
 	BaseURL *url.URL
 
-	// Debug tool that can be used to print each http response
-	Logger func(resp *http.Response)
-
 	// HTTP Client used to communicate with the server
 	httpClient *http.Client
 
 	OAuth          *OAuthService
 	Athlete        *AthleteService
 	Activity       *ActivityService
-	Club           *ClubService
+	Clubs          *ClubService
 	Gear           *GearsService
 	Route          *RouteService
 	Streams        *StreamsService
@@ -54,7 +51,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.OAuth = &OAuthService{client: c}
 	c.Athlete = &AthleteService{client: c}
 	c.Activity = &ActivityService{client: c}
-	c.Club = &ClubService{client: c}
+	c.Clubs = &ClubService{client: c}
 	c.Gear = &GearsService{client: c}
 	c.Route = &RouteService{client: c}
 	c.Segments = &SegmentsService{client: c}
@@ -160,20 +157,13 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 			return err
 		}
 
-		if c.Logger != nil {
-			c.Logger(resp)
-		}
-
 		return &errResponse
 	}
 
 	if v != nil {
 		contentType := resp.Header.Get("Content-Type")
-		if contentType == "application/json" {
+		if contentType == "application/json; charset=utf-8" {
 			err := json.NewDecoder(r).Decode(v)
-			if c.Logger != nil {
-				c.Logger(resp)
-			}
 			if err != nil {
 				return err
 			}
@@ -189,8 +179,9 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 				return fmt.Errorf("v should be a *[]byte or io.Writer when downloading a file")
 			}
 		}
-
 	}
+
+	fmt.Println(buf.String())
 
 	return nil
 }

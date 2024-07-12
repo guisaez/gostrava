@@ -22,12 +22,12 @@ type CreateUploadRequest struct {
 }
 
 type Upload struct {
-	ID         int    `json:"id"`          // The unique identifier of the upload
-	IdSrt      string `json:"id_str"`      // The unique identifier of the upload in string format
-	ExternalID string `json:"external_id"` // The external identifier of the upload
-	Error      string `json:"error"`       // The error associated with this upload
-	Status     string `json:"string"`      // The status of this upload
-	ActivityID int    `json:"activity_id"` // The identifier of the activity this upload resulted into
+	ID         int     `json:"id,omitempty"`          // The unique identifier of the upload
+	IdSrt      string  `json:"id_str,omitempty"`      // The unique identifier of the upload in string format
+	ExternalID string  `json:"external_id,omitempty"` // The external identifier of the upload
+	ActivityID int     `json:"activity_id,omitempty"` // The identifier of the activity this upload resulted into
+	Error      *string `json:"error,omitempty"`       // The error associated with this upload
+	Status     *string `json:"string,omitempty"`      // The status of this upload
 }
 
 // Uploads a new data file to create an activity from. Requires activity:write scope.

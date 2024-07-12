@@ -12,23 +12,27 @@ type StreamsService service
 const streams = "streams"
 
 type StreamSet struct {
-	AltitudeStream       AltitudeStream       `json:"altitude"`        // An instance of AltitudeStream.
-	CadenceStream        CadenceStream        `json:"cadence"`         // An instance of CadenceStream.
-	DistanceStream       DistanceStream       `json:"distance"`        // An instance of DistanceStream.
-	HeartRateStream      HeartrateStream      `json:"heartrate"`       // An instance of HeartrateStream.
-	LatLngStream         LatLngStream         `json:"latlng"`          // An instance of LatLngStream.
-	MovingStream         MovingStream         `json:"moving"`          // An instance of MovingStream.
-	SmoothGradeStream    SmoothGradeStream    `json:"grade_smooth"`    // An instance of SmoothGradeStream.
-	SmoothVelocityStream SmoothVelocityStream `json:"velocity_smooth"` // An instance of SmoothVelocityStream.
-	TempStream           TemperatureStream    `json:"temp"`            // An instance of TemperatureStream.
-	TimeStream           TimeStream           `json:"time"`            // An instance of TimeStream.
-	WattsStream          PowerStream          `json:"watts"`           // An instance of PowerStream.
+	AltitudeStream       *AltitudeStream       `json:"altitude,omitempty"`        // An instance of AltitudeStream.
+	CadenceStream        *CadenceStream        `json:"cadence,omitempty"`         // An instance of CadenceStream.
+	DistanceStream       *DistanceStream       `json:"distance,omitempty"`        // An instance of DistanceStream.
+	HeartRateStream      *HeartrateStream      `json:"heartrate,omitempty"`       // An instance of HeartrateStream.
+	LatLngStream         *LatLngStream         `json:"latlng,omitempty"`          // An instance of LatLngStream.
+	MovingStream         *MovingStream         `json:"moving,omitempty"`          // An instance of MovingStream.
+	SmoothGradeStream    *SmoothGradeStream    `json:"grade_smooth,omitempty"`    // An instance of SmoothGradeStream.
+	SmoothVelocityStream *SmoothVelocityStream `json:"velocity_smooth,omitempty"` // An instance of SmoothVelocityStream.
+	TempStream           *TemperatureStream    `json:"temp,omitempty"`            // An instance of TemperatureStream.
+	TimeStream           *TimeStream           `json:"time,omitempty"`            // An instance of TimeStream.
+	WattsStream          *PowerStream          `json:"watts,omitempty"`           // An instance of PowerStream.
+}
+
+func (ss *StreamSet) String() string {
+	return Stringify(ss)
 }
 
 type baseStream struct {
-	OriginalSize int    `json:"original_size"` // The number of data points in this stream
-	Resolution   string `json:"resolution"`    // The level of detail (sampling) in which this stream was returned May take one of the following values: low, medium, high
-	SeriesType   string `json:"series_type"`   // The base series used in the case the stream was downsampled May take one of the following values: distance, time
+	OriginalSize *int    `json:"original_size,omitempty"` // The number of data points in this stream
+	Resolution   *string `json:"resolution,omitempty"`    // The level of detail (sampling) in which this stream was returned May take one of the following values: low, medium, high
+	SeriesType   *string `json:"series_type,omitempty"`   // The base series used in the case the stream was downsampled May take one of the following values: distance, time
 }
 type AltitudeStream struct {
 	Data []float32 `json:"data"` // The sequence of altitude values for this stream, in meters
