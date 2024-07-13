@@ -1,15 +1,12 @@
 package gostrava
 
 import (
-	"fmt"
-	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
 type StreamsService service
-
-const streams = "streams"
 
 type StreamSet struct {
 	AltitudeStream       *AltitudeStream       `json:"altitude,omitempty"`        // An instance of AltitudeStream.
@@ -25,10 +22,6 @@ type StreamSet struct {
 	WattsStream          *PowerStream          `json:"watts,omitempty"`           // An instance of PowerStream.
 }
 
-func (ss *StreamSet) String() string {
-	return Stringify(ss)
-}
-
 type baseStream struct {
 	OriginalSize *int    `json:"original_size,omitempty"` // The number of data points in this stream
 	Resolution   *string `json:"resolution,omitempty"`    // The level of detail (sampling) in which this stream was returned May take one of the following values: low, medium, high
@@ -40,8 +33,8 @@ type AltitudeStream struct {
 }
 
 type CadenceStream struct {
-	baseStream
 	Data []int `json:"data"` //  The sequence of cadence values for this stream, in rotations per minute
+	baseStream
 }
 
 type DistanceStream struct {
@@ -96,8 +89,7 @@ func (s *StreamsService) GetActivityStreams(accessToken string, activityID int, 
 	params.Add("key_by_type", "true")
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/%s", activities, activityID, streams),
-		Method:      http.MethodGet,
+		Path:        "streams/" + strconv.Itoa(activityID) + "/activities",
 		AccessToken: accessToken,
 		Body:        params,
 	})
@@ -116,8 +108,7 @@ func (s *StreamsService) GetActivityStreams(accessToken string, activityID int, 
 // Returns the given route's streams. Requires read_all scope for private routes.
 func (s *StreamsService) GetRouteStreams(accessToken string, routeID int) (*StreamSet, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/%s", routes, routeID, streams),
-		Method:      http.MethodGet,
+		Path:        "routes/" + strconv.Itoa(routeID) + "/streams",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -139,8 +130,7 @@ func (s *StreamsService) GetSegmentEffortStreams(accessToken string, segmentEffo
 	params.Add("key_by_type", "true")
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/%s", segment_efforts, segmentEffortID, streams),
-		Method:      http.MethodGet,
+		Path:        "segment_efforts/" + strconv.Itoa(segmentEffortID) + "/streams",
 		AccessToken: accessToken,
 		Body:        params,
 	})
@@ -163,8 +153,7 @@ func (s *StreamsService) GetSegmentStreams(accessToken string, segmentID int, ke
 	params.Add("key_by_type", "true")
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/%s", segments, segmentID, streams),
-		Method:      http.MethodGet,
+		Path:        "segments/" + strconv.Itoa(segmentID) + "/streams",
 		AccessToken: accessToken,
 		Body:        params,
 	})

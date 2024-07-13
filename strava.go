@@ -20,11 +20,11 @@ type Client struct {
 	httpClient *http.Client
 
 	OAuth          *OAuthService
-	Athlete        *AthleteService
-	Activity       *ActivityService
+	Athletes       *AthleteService
+	Activities     *ActivityService
 	Clubs          *ClubService
-	Gear           *GearsService
-	Route          *RouteService
+	Gears          *GearsService
+	Routes         *RouteService
 	Streams        *StreamsService
 	Segments       *SegmentsService
 	Uploads        *UploadService
@@ -49,11 +49,11 @@ func NewClient(httpClient *http.Client) *Client {
 	}
 
 	c.OAuth = &OAuthService{client: c}
-	c.Athlete = &AthleteService{client: c}
-	c.Activity = &ActivityService{client: c}
+	c.Athletes = &AthleteService{client: c}
+	c.Activities = &ActivityService{client: c}
 	c.Clubs = &ClubService{client: c}
-	c.Gear = &GearsService{client: c}
-	c.Route = &RouteService{client: c}
+	c.Gears = &GearsService{client: c}
+	c.Routes = &RouteService{client: c}
 	c.Segments = &SegmentsService{client: c}
 	c.SegmentEfforts = &SegmentEffortsService{client: c}
 	c.Uploads = &UploadService{client: c}

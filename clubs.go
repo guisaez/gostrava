@@ -1,21 +1,16 @@
 package gostrava
 
 import (
-	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 )
 
 type ClubService service
 
-const clubs string = "clubs"
-
 // Returns a given club using its identifier
 func (s *ClubService) GetById(accessToken string, id int) (*ClubDetailed, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d", clubs, id),
-		Method:      http.MethodGet,
+		Path:        "clubs/" + strconv.Itoa(id),
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -32,20 +27,18 @@ func (s *ClubService) GetById(accessToken string, id int) (*ClubDetailed, error)
 
 // Returns a list of the administrators of a given club.
 // It uses a predefined ClubAthlete struct and not AthleteSummary because it currently sends only FirstName and LastName
-func (s *ClubService) ListAdministrators(accessToken string, id int, p *RequestParams) ([]ClubAthlete, error) {
+func (s *ClubService) ListAdministrators(accessToken string, id int, opts RequestParams) ([]ClubAthlete, error) {
 	params := url.Values{}
-	if p != nil {
-		if p.Page > 0 {
-			params.Set("page", strconv.Itoa(p.Page))
-		}
-		if p.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(p.PerPage))
-		}
+
+	if opts.Page > 0 {
+		params.Set("page", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/admins", clubs, id),
-		Method:      http.MethodGet,
+		Path:        "clubs/" + strconv.Itoa(id) + "/admins",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -62,20 +55,18 @@ func (s *ClubService) ListAdministrators(accessToken string, id int, p *RequestP
 // Retrieve recent activities from members of a specific club. The authenticated athlete must belong to the request club in order to hit this endpoint, Pagination is supported. Athlete profile
 // visibility is respected for all activities.
 // It uses a predefined ClubAthlete struct and not AthleteSummary because it currently sends only FirstName and LastName
-func (s *ClubService) ListActivities(accessToken string, id int, p *RequestParams) ([]ClubActivity, error) {
+func (s *ClubService) ListActivities(accessToken string, id int, opts RequestParams) ([]ClubActivity, error) {
 	params := url.Values{}
-	if p != nil {
-		if p.Page > 0 {
-			params.Set("page", strconv.Itoa(p.Page))
-		}
-		if p.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(p.PerPage))
-		}
+
+	if opts.Page > 0 {
+		params.Set("page", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/activities", clubs, id),
-		Method:      http.MethodGet,
+		Path:        "clubs/" + strconv.Itoa(id) + "/activities",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -91,20 +82,18 @@ func (s *ClubService) ListActivities(accessToken string, id int, p *RequestParam
 }
 
 // Returns of list of the athletes who are members of a given club.
-func (s *ClubService) ListMembers(accessToken string, id int, p *RequestParams) ([]Member, error) {
+func (s *ClubService) ListMembers(accessToken string, id int, opts RequestParams) ([]Member, error) {
 	params := url.Values{}
-	if p != nil {
-		if p.Page > 0 {
-			params.Set("page", strconv.Itoa(p.Page))
-		}
-		if p.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(p.PerPage))
-		}
+
+	if opts.Page > 0 {
+		params.Set("page", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/members", clubs, id),
-		Method:      http.MethodGet,
+		Path:        "clubs/" + strconv.Itoa(id) + "/members",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -120,21 +109,19 @@ func (s *ClubService) ListMembers(accessToken string, id int, p *RequestParams) 
 }
 
 // Return a list of the clubs whose membership includes the authenticated athlete.
-func (s *ClubService) ListAthleteClubs(accessToken string, p *RequestParams) ([]ClubSummary, error) {
+func (s *ClubService) ListAthleteClubs(accessToken string, opts RequestParams) ([]ClubSummary, error) {
 	params := url.Values{}
-	if p != nil {
-		if p.Page > 0 {
-			params.Set("page", strconv.Itoa(p.Page))
-		}
-		if p.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(p.PerPage))
-		}
+
+	if opts.Page > 0 {
+		params.Set("page", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%s", athlete, clubs),
+		Path:        "athlete/clubs",
 		AccessToken: accessToken,
-		Method:      http.MethodGet,
 	})
 	if err != nil {
 		return nil, err

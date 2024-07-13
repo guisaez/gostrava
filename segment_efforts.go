@@ -1,21 +1,17 @@
 package gostrava
 
 import (
-	"fmt"
-	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
 type SegmentEffortsService service
 
-const segment_efforts string = "segment_efforts"
-
 // Returns a segment effort from an activity that is owned by the authenticated athlete. Requires subscription.
-func (s *SegmentEffortsService) GetSegmentEffort(accessToken string, id int64) (*SegmentEffortDetailed, error) {
+func (s *SegmentEffortsService) GetSegmentEffort(accessToken string, id int) (*SegmentEffortDetailed, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d", segment_efforts, id),
-		Method:      http.MethodGet,
+		Path:        "segment_efforts/" + strconv.Itoa(id),
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -31,32 +27,30 @@ func (s *SegmentEffortsService) GetSegmentEffort(accessToken string, id int64) (
 }
 
 type ListSegmentEffortOptions struct {
+	Page           int // Page number. Defaults to 1
+	PerPage        int // Number of items per page. Defaults to 30
 	StartDateLocal time.Time
 	EndDateLocal   time.Time
-	RequestParams
 }
 
 // Returns a set of the authenticated athlete's segment efforts for a given segment. Requires subscription
-func (s *SegmentEffortsService) ListSegmentEfforts(accessToken string, segmentID int, opt *ListSegmentEffortOptions) ([]SegmentEffortDetailed, error) {
+func (s *SegmentEffortsService) ListSegmentEfforts(accessToken string, segmentID int, opts ListSegmentEffortOptions) ([]SegmentEffortDetailed, error) {
 	params := url.Values{}
 
-	params.Set("segment_id", fmt.Sprintf("%d", segmentID))
+	params.Set("segment_id", strconv.Itoa(segmentID))
 
-	if opt != nil {
-		if opt.StartDateLocal.IsZero() {
-			params.Set("start_date_local", opt.StartDateLocal.Format(time.RFC3339))
-		}
-		if opt.EndDateLocal.IsZero() {
-			params.Set("end_date_local", opt.EndDateLocal.Format(time.RFC3339))
-		}
-		if opt.PerPage > 0 {
-			params.Set("per_page", fmt.Sprintf("%d", opt.PerPage))
-		}
+	if opts.StartDateLocal.IsZero() {
+		params.Set("start_date_local", opts.StartDateLocal.Format(time.RFC3339))
+	}
+	if opts.EndDateLocal.IsZero() {
+		params.Set("end_date_local", opts.EndDateLocal.Format(time.RFC3339))
+	}
+	if opts.PerPage > 0 {
+		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        segment_efforts,
-		Method:      http.MethodGet,
+		Path:        "segment_efforts",
 		AccessToken: accessToken,
 	})
 	if err != nil {

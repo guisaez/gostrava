@@ -83,10 +83,6 @@ type Authorization struct {
 	Scopes       []Scope         `json:"scopes,omitempty"`     // Scopes the user accepted
 }
 
-func (a *Authorization) String() string {
-	return Stringify(a)
-}
-
 // This function handles the exchange step of an authorization code for an acces token in the
 // OAuth 2.0 authorization code grant flow.
 //

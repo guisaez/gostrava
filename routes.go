@@ -1,23 +1,16 @@
 package gostrava
 
 import (
-	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 )
 
 type RouteService service
 
-const routes string = "routes"
-
-
-
 // Returns a route using its identifier. Requires read_all scope for private routes.
-func (s *RouteService) GetById(accessToken string, id int64) (*Route, error) {
+func (s *RouteService) GetById(accessToken string, id int) (*Route, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d", routes, id),
-		Method:      http.MethodGet,
+		Path:        "routes/" + strconv.Itoa(id),
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -34,10 +27,9 @@ func (s *RouteService) GetById(accessToken string, id int64) (*Route, error) {
 
 // Returns a GPX file of the route. Required read_all scope for private routes.
 // ExportRouteGPX returns a GPX file of the route.
-func (s *RouteService) ExportRouteGPX(accessToken string, id int64) ([]byte, error) {
+func (s *RouteService) ExportRouteGPX(accessToken string, id int) ([]byte, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/export_gpx", routes, id),
-		Method:      http.MethodGet,
+		Path:        "routes/" + strconv.Itoa(id) + "/export_gpx",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -53,10 +45,9 @@ func (s *RouteService) ExportRouteGPX(accessToken string, id int64) ([]byte, err
 }
 
 // Returns a TCX file of the route.. Requires read_all scope for private routes.
-func (s *RouteService) ExportRouteTCX(accessToken string, id int64) ([]byte, error) {
+func (s *RouteService) ExportRouteTCX(accessToken string, id int) ([]byte, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/export_tcx", routes, id),
-		Method:      http.MethodGet,
+		Path:        "routes/" + strconv.Itoa(id) + "/export_tcx",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -73,20 +64,18 @@ func (s *RouteService) ExportRouteTCX(accessToken string, id int64) ([]byte, err
 
 // Returns a list of the routes created by the authenticated athlete. Private routes are filtered out
 // unless request by a token with read_all scope.
-func (s *RouteService) ListAthleteRoutes(accessToken string, athleteID int64, p *RequestParams) ([]Route, error) {
+func (s *RouteService) ListAthleteRoutes(accessToken string, athleteID int, opts RequestParams) ([]Route, error) {
 	params := url.Values{}
-	if p != nil {
-		if p.Page > 0 {
-			params.Set("page", strconv.Itoa(p.Page))
-		}
-		if p.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(p.PerPage))
-		}
+
+	if opts.Page > 0 {
+		params.Set("page", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/%s", athletes, athleteID, routes),
-		Method:      http.MethodGet,
+		Path:        "athletes/" + strconv.Itoa(athleteID) + "/routes",
 		AccessToken: accessToken,
 		Body:        params,
 	})

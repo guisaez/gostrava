@@ -3,7 +3,6 @@ package gostrava
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -13,18 +12,16 @@ import (
 
 type ActivityService service
 
-const activities string = "activities"
-
 type NewActivity struct {
-	Name           string       // The name of the activity.
-	Type           ActivityType // Type of activity. For example - Run, Ride etc.
-	SportType      SportType    // Sport type of activity. For example - Run, MountainBikeRide, Ride, etc.
-	StartDateLocal time.Time    // ISO 8601 formatted date time.
-	ElapsedTime    int          // In seconds.
-	Description    string       // Description of the activity.
-	Distance       int          // In meters.
-	Trainer        int8         // Set to 1 to mark as a trainer activity.
-	Commute        int8         // Set to 1 to mark as commute.
+	Name           string       `json:"name"`             // The name of the activity.
+	Type           ActivityType `json:"activity_type"`    // Type of activity. For example - Run, Ride etc.
+	SportType      SportType    `json:"sport_type"`       // Sport type of activity. For example - Run, MountainBikeRide, Ride, etc.
+	StartDateLocal time.Time    `json:"start_date_local"` // ISO 8601 formatted date time.
+	ElapsedTime    int          `json:"elapsed_time"`     // In seconds.
+	Description    string       `json:"description"`      // Description of the activity.
+	Distance       int          `json:"distance"`         // In meters.
+	Trainer        bool         `json:"trainer"`          // Mark as a trainer activity, 0 otherwise.
+	Commute        bool         `json:"commute"`          // Mark as commuter, 0 otherwise.
 }
 
 // Creates a manual activity for an athlete, requires activity:write scope.
@@ -37,11 +34,16 @@ func (s *ActivityService) New(accessToken string, body NewActivity) (*ActivityDe
 	formData.Set("elapsed_time", strconv.Itoa(body.ElapsedTime))
 	formData.Set("description", body.Description)
 	formData.Set("distance", strconv.Itoa(body.Distance))
-	formData.Set("trainer", strconv.Itoa(int(body.Trainer)))
-	formData.Set("commute", strconv.Itoa(int(body.Commute)))
+	// some of go drawbacks/potentials -> explicit conversions
+	if body.Trainer {
+		formData.Set("trainer", "1")
+	}
+	if body.Commute {
+		formData.Set("commute", "1")
+	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        activities,
+		Path:        "activities",
 		Method:      http.MethodPost,
 		AccessToken: accessToken,
 		Body:        formData,
@@ -63,11 +65,10 @@ func (s *ActivityService) New(accessToken string, body NewActivity) (*ActivityDe
 // Requires activity:read_all for Only Me activities.
 func (s *ActivityService) GetByID(accessToken string, id int, includeEfforts bool) (*ActivityDetailed, error) {
 	params := url.Values{}
-	params.Add("include_all_efforts", fmt.Sprintf("%v", includeEfforts))
+	params.Add("include_all_efforts", "true")
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d", activities, id),
-		Method:      http.MethodGet,
+		Path:        "activities/" + strconv.Itoa(id),
 		AccessToken: accessToken,
 		Body:        params,
 	})
@@ -83,54 +84,31 @@ func (s *ActivityService) GetByID(accessToken string, id int, includeEfforts boo
 	return resp, nil
 }
 
-// Summit Feature. Returns the zones of a given activity.
-// Requires activity:read for Everyone and Followers activities.
-// Requires activity:read_all for Only Me activities.
-func (s *ActivityService) ListActivityZones(accessToken string, id int) ([]ActivityZone, error) {
-	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/zones", activities, id),
-		Method:      http.MethodGet,
-		AccessToken: accessToken,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	resp := []ActivityZone{}
-	if err := s.client.do(req, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
 type CommentsReqParams struct {
-	RequestParams
+	Page        int    // Page number. Defaults to 1
+	PerPage     int    // Number of items per page. Defaults to 30
 	PageSize    int    // Number of items per page. Defaults to 30
 	AfterCursor string // Cursor of the las item in the previous page of results, used to request the subsequent page of results. When omitted, the first page of results is fetched.
 }
 
 // Returns the comments on the given activity. Requires activity:read for Everyone and Followers activities. Requires activity:read_all for Only Me activities.
-func (s *ActivityService) ListActivityComments(accessToken string, id int, p *CommentsReqParams) ([]Comment, error) {
+func (s *ActivityService) ListActivityComments(accessToken string, id int, opts CommentsReqParams) ([]Comment, error) {
 	params := url.Values{}
-	if p != nil {
-		if p.Page > 0 {
-			params.Set("page", strconv.Itoa(p.Page))
-		}
-		if p.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(p.PerPage))
-		}
-		if p.PageSize > 0 {
-			params.Set("page_size", strconv.Itoa(p.PageSize))
-		}
-		if p.AfterCursor != "" {
-			params.Set("after_cursor", p.AfterCursor)
-		}
+	if opts.Page > 0 {
+		params.Set("page", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		params.Set("per_page", strconv.Itoa(opts.PerPage))
+	}
+	if opts.PageSize > 0 {
+		params.Set("page_size", strconv.Itoa(opts.PageSize))
+	}
+	if opts.AfterCursor != "" {
+		params.Set("after_cursor", opts.AfterCursor)
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/comments", activities, id),
-		Method:      http.MethodGet,
+		Path:        "activities/" + strconv.Itoa(id) + "/comments",
 		AccessToken: accessToken,
 		Body:        params,
 	})
@@ -148,19 +126,18 @@ func (s *ActivityService) ListActivityComments(accessToken string, id int, p *Co
 
 // Returns the athletes who kudoed an activity identified by an identifier. Requires activity:read for Everyone and Followers activities.
 // Requires activity:read_all for OnlyMe Activities
-func (s *ActivityService) ListActivityKudoers(accessToken string, id int, p *RequestParams) ([]AthleteSummary, error) {
+func (s *ActivityService) ListActivityKudoers(accessToken string, id int, opts RequestParams) ([]AthleteSummary, error) {
 	params := url.Values{}
-	if p != nil {
-		if p.Page > 0 {
-			params.Set("page", strconv.Itoa(p.Page))
-		}
-		if p.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(p.PerPage))
-		}
+
+	if opts.Page > 0 {
+		params.Set("page", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/kudos", activities, id),
+		Path:        "activities/" + strconv.Itoa(id) + "/kudos",
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
 		Body:        params,
@@ -181,8 +158,7 @@ func (s *ActivityService) ListActivityKudoers(accessToken string, id int, p *Req
 // Follower activities. Required activity:read_all for OnlyMeActivities.
 func (s *ActivityService) ListActivityLaps(accessToken string, id int) ([]Lap, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/laps", activities, id),
-		Method:      http.MethodGet,
+		Path:        "activities/" + strconv.Itoa(id) + "/laps",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -197,34 +173,33 @@ func (s *ActivityService) ListActivityLaps(accessToken string, id int) ([]Lap, e
 	return resp, nil
 }
 
-type GetActivityParams struct {
-	RequestParams
-	Before int // An epoch timestamp to use for filtering activities that have taken place before that certain time.
-	After  int // An epoch timestamp to use for filtering activities that have taken place after a certain time.
+type GetActivityOpts struct {
+	Page    int // Page number. Defaults to 1
+	PerPage int // Number of items per page. Defaults to 30
+	Before  int // An epoch timestamp to use for filtering activities that have taken place before that certain time.
+	After   int // An epoch timestamp to use for filtering activities that have taken place after a certain time.
 }
 
 // Returns the activities of an athlete for a specific identifier. Requires activity:read, OnlyMe activities will be filtered out unless
 // requested by a token with activity_read:all.
-func (s *ActivityService) ListAthleteActivities(accessToken string, p *GetActivityParams) ([]ActivitySummary, error) {
+func (s *ActivityService) ListAthleteActivities(accessToken string, opts GetActivityOpts) ([]ActivitySummary, error) {
 	params := url.Values{}
-	if p != nil {
-		if p.Page > 0 {
-			params.Set("page_size", strconv.Itoa(p.Page))
-		}
-		if p.PerPage > 0 {
-			params.Set("per_page", strconv.Itoa(p.Page))
-		}
-		if p.Before > 0 {
-			params.Set("before", strconv.Itoa(p.Before))
-		}
-		if p.After > 0 {
-			params.Set("after", strconv.Itoa(p.After))
-		}
+
+	if opts.Page > 0 {
+		params.Set("page_size", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		params.Set("page_size", strconv.Itoa(opts.PerPage))
+	}
+	if opts.Before > 0 {
+		params.Set("before", strconv.Itoa(opts.Before))
+	}
+	if opts.After > 0 {
+		params.Set("after", strconv.Itoa(opts.After))
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%s", athlete, activities),
-		Method:      http.MethodGet,
+		Path:        "athlete/activities",
 		AccessToken: accessToken,
 		Body:        params,
 	})
@@ -241,10 +216,12 @@ func (s *ActivityService) ListAthleteActivities(accessToken string, p *GetActivi
 	return resp, nil
 }
 
+// Summit Feature. Returns the zones of a given activity.
+// Requires activity:read for Everyone and Followers activities.
+// Requires activity:read_all for Only Me activities.
 func (s *ActivityService) GetActivityZones(accessToken string, id int) ([]ActivityZone, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/zones", activities, id),
-		Method:      http.MethodGet,
+		Path:        "activities/" + strconv.Itoa(id) + "/zones",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -278,9 +255,9 @@ func (s *ActivityService) Update(accessToken string, id int, body UpdatedActivit
 	}
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d", activities, id),
-		Method:      http.MethodGet,
+		Path:        "activities/" + strconv.Itoa(id),
 		AccessToken: accessToken,
+		Method:      http.MethodPut,
 		Body:        io.NopCloser(bytes.NewReader(json)),
 	})
 	if err != nil {

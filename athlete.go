@@ -4,20 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 type AthleteService service
-
-const (
-	athlete  string = "athlete"
-	athletes string = "athletes"
-)
 
 // Returns the currently authenticated athlete. Tokens with profile:read_all scope will receive
 // a detailed athlete representation; all others will receive a SummaryAthlete representation
 func (s *AthleteService) GetAuthenticatedAthlete(accessToken string) (*AthleteDetailed, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        athlete,
+		Path:        "athlete",
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
 	})
@@ -36,8 +32,7 @@ func (s *AthleteService) GetAuthenticatedAthlete(accessToken string) (*AthleteDe
 // Returns the current athlete's heart rate and power zones. Requires profile:read_all.
 func (s *AthleteService) GetZones(accessToken string) (*Zones, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/zones", athlete),
-		Method:      http.MethodGet,
+		Path:        "athlete/zones",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -55,8 +50,7 @@ func (s *AthleteService) GetZones(accessToken string) (*Zones, error) {
 // Returns the activity stats of an athlete. Only includes data from activities set to Everyone's visibility.
 func (s *AthleteService) GetAthleteStats(accessToken string, id int) (*ActivityStats, error) {
 	req, err := s.client.newRequest(requestOpts{
-		Path:        fmt.Sprintf("%s/%d/stats", athletes, id),
-		Method:      http.MethodGet,
+		Path:        "athletes/" + strconv.Itoa(id) + "/stats",
 		AccessToken: accessToken,
 	})
 	if err != nil {
@@ -78,11 +72,10 @@ type UpdatedAthlete struct {
 // Updates the authenticated user. Requires profile:write scope
 func (s *AthleteService) Update(accessToken string, updatedAthlete UpdatedAthlete) (*AthleteDetailed, error) {
 	params := url.Values{}
-
 	params.Set("weight", fmt.Sprintf("%.2f", updatedAthlete.Weight))
 
 	req, err := s.client.newRequest(requestOpts{
-		Path:        athlete,
+		Path:        "athlete",
 		Method:      http.MethodPut,
 		AccessToken: accessToken,
 		Body:        params,
