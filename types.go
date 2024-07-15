@@ -5,102 +5,14 @@ import (
 	"errors"
 )
 
-type ActivityMeta struct {
-	ID            int     `json:"id"`                   // The unique identifier of the activity
-	ResourceState int8    `json:"resource_state"`       //
-	Visibility    *string `json:"visibility,omitempty"` //
-}
 
-type ActivitySummary struct {
-	ActivityMeta
-	AchievementCount           int          `json:"achievement_count"`                  // The number of achievements gained during this activity
-	Athlete                    AthleteMeta  `json:"athlete"`                            // An instance of AthleteMeta.
-	AthleteCount               int          `json:"athlete_count"`                      // The number of athletes for taking part in a group activity
-	AvgHeartRate               float32      `json:"average_heartrate"`                  // The activity's average heart rate, in beats per minute
-	AvgSpeed                   float32      `json:"average_speed"`                      // The activity's average speed, in meters per second
-	CommentCount               int          `json:"comment_count"`                      // The number of comments for this activity
-	Commute                    bool         `json:"commute,omitempty"`                  // Whether this activity is a commute
-	DisplayHideHeartRateOption *bool        `json:"display_heartrate_option,omitempty"` //
-	Distance                   float32      `json:"distance"`                           // The activity's distance, in meters
-	ElapsedTime                int          `json:"elapsed_time"`                       // The activity's elapsed time, in seconds
-	ElevationHigh              float32      `json:"elev_high"`                          // The activity's highest elevation, in meters
-	ElevationLow               float32      `json:"elev_low"`                           // The activity's lowest elevation, in meters
-	EndLatLng                  LatLng       `json:"end_latlng,omitempty"`               // An instance of LatLng.
-	ExternalID                 string       `json:"external_id"`                        // The identifier provided at upload time
-	Flagged                    bool         `json:"flagged"`                            // Whether this activity is flagged
-	FromAcceptedTag            bool         `json:"from_accepted_tag"`                  //
-	GearID                     *string      `json:"gear_id,omitempty"`                  // The id of the gear for the activity
-	HasHeartRate               bool         `json:"has_heartrate"`                      // Indicates weather the activity has a heartrate recorder
-	HasKudoed                  bool         `json:"has_kudoed"`                         // Whether the logged-in athlete has kudoed this activity
-	HeartRateOptOut            bool         `json:"heartrate_opt_out"`                  //
-	HideFromHome               *bool        `json:"hide_from_home,omitempty"`           // Whether the activity is muted
-	KudosCount                 int          `json:"kudos_count"`                        // The number of kudos given for this activity
-	LocationCity               string       `json:"location_city"`                      // City where the activity took place
-	LocationCountry            string       `json:"location_country"`                   // Country where the activity took place
-	LocationState              string       `json:"location_state"`                     //	State where the activity took place
-	Manual                     bool         `json:"manual"`                             // Indicates whether this activity was manually created by the user
-	Map                        PolylineMap  `json:"map"`                                // An instance of PolylineMap.
-	MaxHeartRate               float32      `json:"max_heartrate"`                      // The activity's max heartrate in beats per minute
-	MaxSpeed                   float32      `json:"max_speed"`                          // The activity's max speed, in meters per second
-	MovingTime                 int          `json:"moving_time"`                        // The activity's moving time, in seconds
-	Name                       string       `json:"name"`                               // The name of the activity
-	PhotoCount                 int          `json:"photo_count"`                        // The number of Instagram photos for this activity
-	PRCount                    int          `json:"pr_count"`                           //
-	Private                    bool         `json:"private"`                            // Whether this activity is private
-	SportType                  SportType    `json:"sport_type"`                         // An instance of SportType.
-	StartDate                  TimeStamp    `json:"start_date"`                         // The time at which the activity was started.
-	StartDateLocal             TimeStamp    `json:"start_date_local"`                   // The time at which the activity was started in the local timezone.
-	StartLatLng                LatLng       `json:"start_latlng"`                       // An instance of LatLng.
-	SufferScore                *float32     `json:"suffer_score,omitempty"`             //
-	Timezone                   string       `json:"timezone"`                           // The timezone of the activity
-	TotalElevationGain         float32      `json:"total_elevation_gain"`               // The activity's total elevation gain.
-	TotalPhotoCount            int          `json:"total_photo_count"`                  // The number of Instagram and Strava photos for this activity
-	Trainer                    bool         `json:"trainer"`                            // Whether this activity was recorded on a training machine
-	Type                       ActivityType `json:"type"`                               // Deprecated. Prefer to use sport_type
-	UploadID                   int          `json:"upload_id"`                          // The identifier of the upload that resulted in this activity
-	UploadIdStr                string       `json:"upload_id_str"`                      // The unique identifier of the upload in string format
-	UTCOffset                  float32      `json:"utc_offset"`                         //
-	WorkoutType                *int         `json:"workout_type,omitempty"`             //  The activity's workout type
-}
 
-type ActivityDetailed struct {
-	ActivitySummary
-	AvailableZones []string                `json:"available_zones,omitempty"` // Activity available zones:
-	BestEfforts    []SegmentEffortDetailed `json:"best_efforts,omitempty"`    // A collection of SegmentEffortDetailed objects.
-	Calories       float32                 `json:"calories"`                  // The number of kilocalories consumed during this activity
-	DeviceName     string                  `json:"device_name,"`              // The name of the device used to record the activity
-	Description    string                  `json:"description,omitempty"`     // The description of the activity
-	EmbedToken     string                  `json:"embed_token,omitempty"`     // The token used to embed a Strava activity
-	Gear           *GearSummary            `json:"gear,omitempty"`            // An instance of SummaryGear.
-	Laps           []Lap                   `json:"laps,omitempty"`            // A collection of Lap objects.
-	Photos         PhotosSummary           `json:"photos"`                    // An instance of PhotosSummary.
-	SegmentEfforts []SegmentEffortDetailed `json:"segment_efforts"`           // A collection of SegmentEffortDetailed objects.
-	SplitsMetric   []Split                 `json:"splits_metric"`             // The splits of this activity in metric units (for runs)
-	SplitsStandard []Split                 `json:"splits_standard"`           // The splits of this activity in imperial units (for runs)
-}
 
-// A set of rolled-up statistics and totals for an athlete
-type ActivityStats struct {
-	AllRideTotals        ActivityTotal `json:"all_ride_totals"`    // The all time ride stats for the athlete.
-	AllRunTotals         ActivityTotal `json:"all_run_totals"`     // The all time run stats for the athlete.
-	AllSwimTotals        ActivityTotal `json:"all_swim_totals"`    // The all time swim stats for the athlete.
-	RecentRideTotals     ActivityTotal `json:"recent_ride_totals"` // The recent (last 4 weeks) ride stats for the athlete.
-	RecentRunTotals      ActivityTotal `json:"recent_run_totals"`  // The recent (last 4 weeks) run stats for the athlete.
-	RecentSwimTotals     ActivityTotal `json:"recent_swim_totals"` // The recent (last 4 weeks) swim stats for the athlete.
-	YearToDateRideTotals ActivityTotal `json:"ytd_ride_totals"`    // The year to date ride stats for the athlete.
-	YearToDateRunTotals  ActivityTotal `json:"ytd_run_totals"`     // The year to date run stats for the athlete.
-	YearToDateSwimTotals ActivityTotal `json:"ytd_swim_totals"`    // The year to date swim stats for the athlete.
-}
 
-// A roll-up of metrics pertaining to a set of activities. Values are in seconds and meters.
-type ActivityTotal struct {
-	Count            int     `json:"count"`             // The number of activities considered in this total.
-	Distance         float32 `json:"distance"`          // The total distance covered by the considered activities.
-	MovingTime       int     `json:"moving_time"`       // The total moving time of the considered activities.
-	ElapsedTime      int     `json:"elapsed_time"`      // The total elapsed time of the considered activities.
-	ElevationGain    float32 `json:"elevation_gain"`    // The total elevation gain of the considered activities.
-	AchievementCount int     `json:"achievement_count"` // The total number of achievements of the considered activities.
-}
+
+
+
+
 
 type ActivityType string
 
@@ -154,48 +66,10 @@ type ActivityZone struct {
 	Max                 *int             `json:"max,omitempty"`
 }
 
-type AthleteMeta struct {
-	ID            int  `json:"id"`             // The unique identifier of the athlete
-	ResourceState int8 `json:"resource_state"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
-}
 
-type AthleteSummary struct {
-	AthleteMeta
-	BadgeTypeId   int8      `json:"badge_type_id"`
-	Bio           string    `json:"bio"`            // The athlete's bio.
-	City          string    `json:"city"`           // The athlete's city.
-	Country       string    `json:"country"`        // The athlete's country.
-	CreatedAt     TimeStamp `json:"created_at"`     // The time at which the athlete was created.
-	FirstName     string    `json:"firstname"`      // The athlete's first name.
-	LastName      string    `json:"lastname"`       // The athlete's last name.
-	Premium       bool      `json:"premium"`        // Deprecated. Use summit field instead. Whether the athlete has any Summit subscription.
-	Profile       string    `json:"profile"`        // URL to a 124x124 pixel profile picture.
-	ProfileMedium string    `json:"profile_medium"` // URL to a 62x62 pixel profile picture.
-	Sex           string    `json:"sex"`            // The athlete's sex. May take one of the following values: M, F
-	State         string    `json:"state"`          // The athlete's state or geographical region.
-	Summit        bool      `json:"summit"`         // Whether the athlete has any Summit subscription.
-	UpdatedAt     TimeStamp `json:"updated_at"`     // The time at which the athlete was last updated.
-	Weight        float64   `json:"weight"`         // The athlete's weight.
-}
 
-type AthleteDetailed struct {
-	AthleteSummary
-	AthleteType           int8          `json:"athlete_type"`
-	Blocked               bool          `json:"blocked"`
-	CanFollow             bool          `json:"can_follow"`
-	DatePreference        string        `json:"date_preference"` // Athlete's date preference
-	FollowerCount         int           `json:"follower_count"`  // The athlete's follower count.
-	FriendCount           int           `json:"friend_count"`    // The athlete's friend count.
-	IsWinBackViaUpload    bool          `json:"is_winback_via_upload"`
-	IsWinBackViaView      bool          `json:"is_winback_via_view"`
-	MeasurementPreference string        `json:"measurement_preference"` // The athlete's preferred unit system. May take one of the following values: feet, meters
-	MutualFriendCount     int           `json:"mutual_friend_count"`    // Number of mutual friends between the authenticated athlete and this athlete
-	PostableClubsCount    int           `json:"postable_clubs_count"`
-	FTP                   int           `json:"ftp"`   // The athlete's FTP (Functional Threshold Power).
-	Clubs                 []ClubSummary `json:"clubs"` // The athlete's clubs.
-	Bikes                 []GearSummary `json:"bikes"` // The athlete's bikes.
-	Shoes                 []GearSummary `json:"shoes"` // The athlete's shoes.
-}
+
+
 
 type ClubMeta struct {
 	ID            int    `json:"id"`             // The club's unique identifier.

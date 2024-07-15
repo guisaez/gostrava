@@ -108,29 +108,4 @@ func (s *ClubService) ListMembers(accessToken string, id int, opts RequestParams
 	return resp, nil
 }
 
-// Return a list of the clubs whose membership includes the authenticated athlete.
-func (s *ClubService) ListAthleteClubs(accessToken string, opts RequestParams) ([]ClubSummary, error) {
-	params := url.Values{}
 
-	if opts.Page > 0 {
-		params.Set("page", strconv.Itoa(opts.Page))
-	}
-	if opts.PerPage > 0 {
-		params.Set("per_page", strconv.Itoa(opts.PerPage))
-	}
-
-	req, err := s.client.newRequest(requestOpts{
-		Path:        "athlete/clubs",
-		AccessToken: accessToken,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	resp := []ClubSummary{}
-	if err := s.client.do(req, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
