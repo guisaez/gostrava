@@ -89,6 +89,8 @@ type ExplorerSegment struct {
 	LocalLegendEnabled bool    `json:"local_legend_enabled"`
 }
 
+// *****************************************************
+
 type SegmentsService service
 
 // Returns the specified segment, read_all scope required in order to retrieve athlete specific segment information,

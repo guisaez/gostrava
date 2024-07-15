@@ -1,5 +1,7 @@
 package gostrava
 
+// *****************************************************
+
 type GearsService service
 
 // Returns an equipment using its identifier.

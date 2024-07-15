@@ -52,7 +52,7 @@ type UpdatedAthlete struct {
 }
 
 // Updates the authenticated user. Requires profile:write scope
-func (s *AthleteService) Update(accessToken string, updatedAthlete UpdatedAthlete) (*AthleteDetailed, error) {
+func (s *CurrentAthleteService) Update(accessToken string, updatedAthlete UpdatedAthlete) (*AthleteDetailed, error) {
 	params := url.Values{}
 	params.Set("weight", fmt.Sprintf("%.2f", updatedAthlete.Weight))
 
@@ -75,7 +75,7 @@ func (s *AthleteService) Update(accessToken string, updatedAthlete UpdatedAthlet
 }
 
 // Return a list of the clubs whose membership includes the authenticated athlete.
-func (s *CurrentAthleteService) ListAthleteClubs(accessToken string, opts RequestParams) ([]ClubSummary, error) {
+func (s *CurrentAthleteService) ListClubs(accessToken string, opts RequestParams) ([]ClubSummary, error) {
 	params := url.Values{}
 
 	if opts.Page > 0 {
@@ -95,6 +95,42 @@ func (s *CurrentAthleteService) ListAthleteClubs(accessToken string, opts Reques
 
 	resp := []ClubSummary{}
 	if err := s.client.do(req, &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// Returns the activities of an athlete for a specific identifier. Requires activity:read, OnlyMe activities will be filtered out unless
+// requested by a token with activity_read:all.
+func (s *CurrentAthleteService) ListActivities(accessToken string, opts GetActivityOpts) ([]ActivitySummary, error) {
+	params := url.Values{}
+
+	if opts.Page > 0 {
+		params.Set("page_size", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		params.Set("per_page", strconv.Itoa(opts.PerPage))
+	}
+	if opts.Before > 0 {
+		params.Set("before", strconv.Itoa(opts.Before))
+	}
+	if opts.After > 0 {
+		params.Set("after", strconv.Itoa(opts.After))
+	}
+
+	req, err := s.client.newRequest(requestOpts{
+		Path:        "athlete/activities",
+		AccessToken: accessToken,
+		Body:        params,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var resp []ActivitySummary
+	err = s.client.do(req, &resp)
+	if err != nil {
 		return nil, err
 	}
 

@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// *****************************************************
+
 type SegmentEffortsService service
 
 // Returns a segment effort from an activity that is owned by the authenticated athlete. Requires subscription.

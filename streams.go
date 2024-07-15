@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-type StreamsService service
-
 type Stream struct {
 	Type string        `json:"type"`
 	Data []interface{} `json:"data"`
@@ -86,6 +84,10 @@ type TimeStream struct {
 	Data []int `json:"data"` // The sequence of time values for this stream, in seconds
 	Stream
 }
+
+// *****************************************************
+
+type StreamsService service
 
 // Returns the given activity's streams. Requires activity:read scope. Requires activity:read_all scope for Only Me activities.
 // It defaults to all (all the following keys):
