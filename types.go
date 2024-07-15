@@ -1,19 +1,5 @@
 package gostrava
 
-import (
-	"encoding/json"
-	"errors"
-)
-
-
-
-
-
-
-
-
-
-
 type ActivityType string
 
 const (
@@ -65,11 +51,6 @@ type ActivityZone struct {
 	CustomZones         *bool            `json:"custom_zones,omitempty"`
 	Max                 *int             `json:"max,omitempty"`
 }
-
-
-
-
-
 
 type ClubMeta struct {
 	ID            int    `json:"id"`             // The club's unique identifier.
@@ -144,23 +125,6 @@ type Comment struct {
 	CreatedAt  TimeStamp      `json:"created_at="` // The time at which this comment was created.
 }
 
-type ExplorerResponse struct {
-	Segments []ExplorerSegment `json:"segments"` // The set of segments matching an explorer request
-}
-
-type ExplorerSegment struct {
-	ID                 int     `json:"id"`                   // The unique identifier of this segment
-	Name               string  `json:"name"`                 // The name of this segment
-	ClimbCategory      int8    `json:"climb_category"`       // The category of the climb [0, 5]. Higher is harder ie. 5 is Hors catégorie, 0 is uncategorized in climb_category. If climb_category = 5, climb_category_desc = HC. If climb_category = 2, climb_category_desc = 3.
-	ClimbCategoryDesc  string  `json:"climb_category_desc"`  // The description for the category of the climb May take one of the following values: NC, 4, 3, 2, 1, HC
-	AvgGrade           float32 `json:"avg_grade"`            // The segment's average grade, in percents
-	StartLatLng        LatLng  `json:"start_latlng"`         // An instance of LatLng.
-	EndLatLng          LatLng  `json:"end_latlng"`           // An instance of LatLng.
-	ElevationDiff      float32 `json:"elev_difference"`      // The segments's elevation difference, in meters
-	Distance           float32 `json:"distance"`             // The segment's distance, in meters
-	Polyline           string  `json:"points"`               // The polyline of the segment
-	LocalLegendEnabled bool    `json:"local_legend_enabled"` //
-}
 
 type GearSummary struct {
 	ID           string  `json:"id"`             // The gear's unique identifier.
@@ -176,11 +140,6 @@ type GearDetailed struct {
 	ModelName   string `json:"model_name"`  // The gear's model name.
 	FrameType   int    `json:"frame_type"`  // The gear's frame type (bike only).
 	Description string `json:"description"` // The gear's description.
-}
-
-type HeartRateZoneRanges struct {
-	CustomZones bool        `json:"custom_zone"` // Whether the athlete has set their own custom heart rate zones
-	Zones       []ZoneRange `json:"zones"`       // An instance of ZoneRanges.
 }
 
 type Lap struct {
@@ -238,95 +197,9 @@ type PolylineMap struct {
 	SummaryPolyline string `json:"summary_polyline"` // The summary polyline of the map
 }
 
-type PowerZoneRanges struct {
-	Zones []ZoneRange `json:"zones"` // An instance of ZoneRanges.
-}
-
 type RequestParams struct {
 	Page    int // Page number. Defaults to 1
 	PerPage int // Number of items per page. Defaults to 30
-}
-
-type Route struct {
-	Athlete             *AthleteSummary  `json:"athlete,omitempty"`               // An instance of AthleteSummary.
-	Description         *string          `json:"description,omitempty"`           // The description of the route
-	Distance            *float32         `json:"distance,omitempty"`              // The route's distance, in meters
-	ElevationGain       *float32         `json:"elevation_gain,omitempty"`        // The route's elevation gain.
-	ID                  *int             `json:"id,omitempty"`                    // The unique identifier of this route
-	IdStr               *string          `json:"id_str,omitempty"`                // The unique identifier of the route in string format
-	Map                 *PolylineMap     `json:"map,omitempty"`                   // An instance of PolylineMap.
-	Name                *string          `json:"name,omitempty"`                  // The name of this route
-	Private             *bool            `json:"private,omitempty"`               // Whether this route is private
-	Starred             *bool            `json:"starred,omitempty"`               // Whether this route is starred by the logged-in athlete
-	Timestamp           *int             `json:"timestamp,omitempty"`             // An epoch timestamp of when the route was created
-	Type                *RouteType       `json:"type,omitempty"`                  // This route's type RouteTypes.Ride, RouteTypes.Run
-	SubType             *SubRouteType    `json:"sub_type,omitempty"`              // This route's sub-type (SubRouteTypes.Road, SubRouteTypes.MountainBike, SubRouteTypes.Cross, SubRouteTypes.Trail, SubRouteTypes.Mixed)
-	CreatedAt           *TimeStamp       `json:"created_at,omitempty"`            // The time at which the route was created
-	UpdatedAt           *TimeStamp       `json:"updated_at,omitempty"`            // The time at which the route was last updated
-	EstimatedMovingTime *int             `json:"estimated_moving_time,omitempty"` // Estimated time in seconds for the authenticated athlete to complete route
-	Segments            []SegmentSummary `json:"segments,omitempty"`              // The segments traversed by this route
-	Waypoints           []Waypoint       `json:"waypoints,omitempty"`             // The custom waypoints along this route
-}
-
-type RouteType string
-
-const (
-	RideRoute RouteType = "ride"
-	RunRoute  RouteType = "run"
-)
-
-func (rt *RouteType) UnmarshalJSON(data []byte) error {
-	var routeType int
-	err := json.Unmarshal(data, &routeType)
-	if err != nil {
-		return err
-	}
-
-	switch routeType {
-	case 1:
-		*rt = RideRoute
-	case 2:
-		*rt = RunRoute
-	default:
-		return errors.New("invalid route type")
-	}
-
-	return nil
-}
-
-type SubRouteType string
-
-const (
-	Road         SubRouteType = "road"
-	MountainBike SubRouteType = "mountain_bike"
-	Cross        SubRouteType = "cross"
-	Trail        SubRouteType = "train"
-	Mixed        SubRouteType = "mixed"
-)
-
-func (rt *SubRouteType) UnmarshalJSON(data []byte) error {
-	var subRouteType int
-	err := json.Unmarshal(data, &subRouteType)
-	if err != nil {
-		return err
-	}
-
-	switch subRouteType {
-	case 1:
-		*rt = Road
-	case 2:
-		*rt = MountainBike
-	case 3:
-		*rt = Cross
-	case 4:
-		*rt = Trail
-	case 5:
-		*rt = Mixed
-	default:
-		return errors.New("invalid sub-route type")
-	}
-
-	return nil
 }
 
 type SportType string
@@ -413,68 +286,6 @@ type SegmentSummaryEffort struct {
 	IsKom          bool      `json:"is_kom"`           // Whether this effort is the current best on the leaderboard
 }
 
-type SegmentActivityType string
-
-const (
-	RideSegment SegmentActivityType = "Ride"
-	RunSegment  SegmentActivityType = "Run"
-)
-
-type SegmentSummary struct {
-	ID              int                     `json:"id"`                          // The unique identifier of this segment
-	Name            string                  `json:"name"`                        // The name of this segment
-	ActivityType    SegmentActivityType     `json:"activity_type"`               // May take one of the following values: SegmentActivityTypes.Ride, SegmentActivityTypes.Run
-	Distance        float32                 `json:"distance"`                    // The segment's distance, in meters
-	AvgGrade        float32                 `json:"average_grade"`               // The segment's average grade, in percents
-	MaximumGrade    float32                 `json:"maximum_grade"`               // The segments's maximum grade, in percents
-	ElevationHigh   float32                 `json:"elevation_high"`              // The segments's highest elevation, in meters
-	ElevationLow    float32                 `json:"elevation_low"`               // The segments's lowest elevation, in meters
-	StartLatLng     LatLng                  `json:"start_latlng"`                // An instance of LatLng.
-	EndLatLng       LatLng                  `json:"end_latlng"`                  // An instance of LatLng.
-	ClimbCategory   int8                    `json:"climb_category"`              // The category of the climb [0, 5]. Higher is harder ie. 5 is Hors catégorie, 0 is uncategorized in climb_category.
-	City            string                  `json:"city"`                        // The segments's city.
-	State           string                  `json:"state"`                       // The segments's state or geographical region.
-	Country         string                  `json:"country"`                     // The segment's country.
-	Private         bool                    `json:"private"`                     // Whether this segment is private.
-	AthletePREffort *SummaryPRSegmentEffort `json:"athlete_pr_effort,omitempty"` // An instance of SummaryPRSegmentEffort.
-}
-
-type SegmentDetailed struct {
-	SegmentSummary
-	CreatedAt           TimeStamp             `json:"created_at"`                      // The time at which the segment was created.
-	UpdatedAt           TimeStamp             `json:"updated_at"`                      // The time at which the segment was last updated.
-	TotalElevationGain  float32               `json:"total_elevation_gain"`            // The segment's total elevation gain.
-	ElevationProfiles   ElevationProfiles     `json:"elevation_profiles"`              //
-	Map                 *PolylineMap          `json:"map,omitempty"`                   // An instance of PolylineMap.
-	EffortCount         int                   `json:"effort_count"`                    // The total number of efforts for this segment
-	EffortDescription   string                `json:"effort_description"`              //
-	AthleteCount        int                   `json:"athlete_count"`                   // The number of unique athletes who have an effort for this segment
-	Hazardous           bool                  `json:"hazardous"`                       // Whether this segment is considered hazardous
-	StarCount           int                   `json:"star_count"`                      // The number of stars for this segment
-	AthleteSegmentStats *SegmentSummaryEffort `json:"athlete_segment_stats,omitempty"` // An instance ofSegmentSummaryEffort.
-	Xoms                *Xoms                 `json:"xoms,omitempty"`                  //
-	LocalLegend         *LocalLegend          `json:"local_legend,omitempty"`          //
-}
-
-type LocalLegend struct {
-	AthleteID         int    `json:"athlete_id"`
-	Title             string `json:"title"`
-	Profile           string `json:"profile"`
-	EffortDescription string `json:"effort_description"`
-	EffortCount       string `json:"effort_count"`
-	Destination       string `json:"destination"`
-}
-
-type Xoms struct {
-	Kom         string `json:"kom"`
-	Qom         string `json:"qom"`
-	Overall     string `json:"overall"`
-	Destination struct {
-		Href string `json:"href"`
-		Type string `json:"type"`
-		Name string `json:"name"`
-	}
-}
 
 type SegmentEffortDetailed struct {
 	Name         *string         `json:"name,omitempty"`              // The name of the segment on which this effort was performed
@@ -494,33 +305,11 @@ type SegmentEffortDetailed struct {
 	Hidden       *bool           `json:"hidden,omitempty"`            // Whether this effort should be hidden when viewed within an activity
 }
 
-type ElevationProfiles struct {
-	DarkUrl  string `json:"dark_url"`
-	LightUrl string `json:"light_url"`
+type Urls struct {
+	Url       string `json:"url"`
+	RetinaUrl string `json:"retirna_url"`
+	DarkUrl   string `json:"dark_url"`
+	LightUrl  string `json:"light_url"`
 }
 
-// A union type representing the time spent in a given zone.
-type TimedZoneRange struct {
-	Min  int `json:"min"`  // The minimum value in the range.
-	Max  int `json:"max"`  // The maximum value in the range.
-	Time int `json:"time"` // The number of seconds spent in this zone
-}
 
-type Zones struct {
-	HearRate HeartRateZoneRanges `json:"heart_rate"` // An instance of HeartRateZoneRanges.
-	Power    PowerZoneRanges     `json:"power"`      // An instance of PowerZoneRanges.
-}
-
-type ZoneRange struct {
-	Max int `json:"max"` // The maximum value in the range.
-	Min int `json:"min"` // The minimum value in the range.
-}
-
-type Waypoint struct {
-	LatLng            LatLng   `json:"latlng"`              // The location along the route that the waypoint is closest to
-	TargetLatLng      LatLng   `json:"target_latlng"`       // A location off of the route that the waypoint is (optional)
-	Categories        []string `json:"categories"`          // Categories that the waypoint belongs to
-	Title             string   `json:"string"`              // A title for the waypoint
-	Description       string   `json:"description"`         // A description of the waypoint (optional)
-	DistanceIntoRoute int      `json:"distance_into_route"` // The number meters along the route that the waypoint is located
-}

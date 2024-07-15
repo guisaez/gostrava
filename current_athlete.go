@@ -11,7 +11,7 @@ type CurrentAthleteService service
 
 // Returns the currently authenticated athlete. Tokens with profile:read_all scope will receive
 // a detailed athlete representation; all others will receive a SummaryAthlete representation
-func (s *CurrentAthleteService) GetAuthenticatedAthlete(accessToken string) (*AthleteDetailed, error) {
+func (s *CurrentAthleteService) GetAthlete(accessToken string) (*AthleteDetailed, error) {
 	req, err := s.client.newRequest(requestOpts{
 		Path:        "athlete",
 		Method:      http.MethodGet,
