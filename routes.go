@@ -7,6 +7,7 @@ import (
 )
 
 type RouteDetailed struct {
+	RouteSummary
 	Segments []*SegmentSummary `json:"segments"` // The segments traversed by this route
 }
 
@@ -101,6 +102,8 @@ func (rt *RouteType) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+// *****************************************************
 
 type RouteService service
 

@@ -52,70 +52,6 @@ type ActivityZone struct {
 	Max                 *int             `json:"max,omitempty"`
 }
 
-type ClubMeta struct {
-	ID            int    `json:"id"`             // The club's unique identifier.
-	Name          string `json:"name"`           // The club's name.
-	ResourceState int8   `json:"resource_state"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
-}
-
-type ClubSummary struct {
-	ClubMeta
-	Admin              bool           `json:"admin"`                // Whether the currently logged-in athlete is an administrator of this club.
-	ActivityTypes      []ActivityType `json:"activity_types"`       // The activity types that count for a club. This takes precedence over sport_type.
-	ActivityTypesIcon  string         `json:"activity_types_icon"`  //
-	City               string         `json:"city"`                 // The club's city.
-	Country            string         `json:"country"`              // The club's country.
-	CoverPhoto         string         `json:"cover_photo"`          // URL to a ~1185x580 pixel cover photo.
-	CoverPhotoSmall    string         `json:"cover_photo_small"`    // URL to a ~360x176 pixel cover photo.
-	Dimensions         []string       `json:"dimensions"`           //
-	Featured           bool           `json:"featured,omitempty"`   // Whether the club is featured or not.
-	LocalizedSportType string         `json:"localized_sport_type"` //
-	Membership         string         `json:"membership"`           // The membership status of the logged-in athlete. May take one of the following values: member, pending
-	MemberCount        int            `json:"member_count"`         // The club's member count.
-	Private            bool           `json:"private"`              // Whether the club is private.
-	Profile            string         `json:"profile"`              //
-	ProfileMedium      string         `json:"profile_medium"`       // URL to a 60x60 pixel profile picture.
-	SportType          ClubSportType  `json:"sport_type"`           // Deprecated. Prefer to use activity_types. May take one of the following values: ClubSportTypes.Cycling, ClubSportTypes.Running, ClubSportTypes.Triathlon,  ClubSportTypes.Other
-	State              string         `json:"state"`                // The club's state or geographical region.
-	URL                string         `json:"url"`                  // The club's vanity URL.
-	Verified           bool           `json:"verified"`             // Whether the club is verified or not.
-}
-
-type ClubDetailed struct {
-	ClubSummary
-	ClubType       string `json:"club_type"`
-	Description    string `json:"description"`     // The club's description
-	FollowingCount int    `json:"following_count"` // The number of athletes in the club that the logged-in athlete follows.
-	Owner          bool   `json:"owner"`           // Whether the currently logged-in athlete is the owner of this club.
-	Website        string `json:"website"`         // Club Website
-}
-
-type ClubActivity struct {
-	Athlete            ClubAthlete  `json:"athlete"`              // An instance of MetaAthlete.
-	Distance           float32      `json:"distance"`             // The activity's distance, in meters
-	ElapsedTime        int          `json:"elapsed_time"`         // The activity's elapsed time, in seconds
-	MovingTime         int          `json:"moving_time"`          // The activity's moving time, in seconds
-	Name               string       `json:"name"`                 // The name of the activity
-	ResourceState      int8         `json:"resource_state"`       // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
-	SportType          SportType    `json:"sport_type"`           // An instance of SportType.
-	Type               ActivityType `json:"activity_type"`        // Deprecated. Prefer to use sport_type
-	TotalElevationGain float32      `json:"total_elevation_gain"` // The activity's total elevation gain.
-}
-
-type ClubAthlete struct {
-	FirstName     string `json:"firstname"`      // Athlete First Name
-	LastName      string `json:"lastname"`       // Athlete Last Name
-	ResourceState int8   `json:"resource_state"` //
-}
-
-type ClubSportType string
-
-const (
-	Cycling   ClubSportType = "cycling"
-	Running   ClubSportType = "running"
-	Triathlon ClubSportType = "triathlon"
-	Other     ClubSportType = "other"
-)
 
 type Comment struct {
 	ID         int            `json:"id"`          // The unique identifier of this comment
@@ -124,7 +60,6 @@ type Comment struct {
 	Athlete    AthleteSummary `json:"athlete"`     // An instance of AthleteSummary.
 	CreatedAt  TimeStamp      `json:"created_at="` // The time at which this comment was created.
 }
-
 
 type GearSummary struct {
 	ID           string  `json:"id"`             // The gear's unique identifier.
@@ -169,14 +104,7 @@ type Lap struct {
 
 type LatLng [2]float32 // A collection of float objects. A pair of latitude/longitude coordinates, represented as an array of 2 floating point numbers.
 
-type Member struct {
-	Admin         bool   `json:"admin"`          // Whether the athlete is a club admin.
-	FirstName     string `json:"firstname"`      // The athlete's first name.
-	LastName      string `json:"lastname"`       // The athlete's last initial.
-	Membership    string `json:"membership"`     // The membership status of the logged-in athlete. May take one of the following values: member, pending
-	Owner         bool   `json:"owner"`          // Whether the athlete is club owner.
-	ResourceState int8   `json:"resource_state"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
-}
+
 
 type PhotosSummary struct {
 	Count   int                   `json:"count"`             // The number of photos
@@ -286,7 +214,6 @@ type SegmentSummaryEffort struct {
 	IsKom          bool      `json:"is_kom"`           // Whether this effort is the current best on the leaderboard
 }
 
-
 type SegmentEffortDetailed struct {
 	Name         *string         `json:"name,omitempty"`              // The name of the segment on which this effort was performed
 	Activity     *ActivityMeta   `json:"activity,omitempty"`          // An instance of MetaActivity.
@@ -311,5 +238,3 @@ type Urls struct {
 	DarkUrl   string `json:"dark_url"`
 	LightUrl  string `json:"light_url"`
 }
-
-

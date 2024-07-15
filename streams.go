@@ -8,6 +8,16 @@ import (
 
 type StreamsService service
 
+type Stream struct {
+	Type string        `json:"type"`
+	Data []interface{} `json:"data"`
+
+	// Not available for GetRouteStreams()
+	OriginalSize int    `json:"original_size"` // The number of data points in this stream
+	Resolution   string `json:"resolution"`    // The level of detail (sampling) in which this stream was returned May take one of the following values: low, medium, high
+	SeriesType   string `json:"series_type"`   // The base series used in the case the stream was downsampled May take one of the following values: distance, time
+}
+
 type StreamSet struct {
 	AltitudeStream       *AltitudeStream       `json:"altitude,omitempty"`        // An instance of AltitudeStream.
 	CadenceStream        *CadenceStream        `json:"cadence,omitempty"`         // An instance of CadenceStream.
@@ -22,70 +32,72 @@ type StreamSet struct {
 	WattsStream          *PowerStream          `json:"watts,omitempty"`           // An instance of PowerStream.
 }
 
-type baseStream struct {
-	OriginalSize *int    `json:"original_size,omitempty"` // The number of data points in this stream
-	Resolution   *string `json:"resolution,omitempty"`    // The level of detail (sampling) in which this stream was returned May take one of the following values: low, medium, high
-	SeriesType   *string `json:"series_type,omitempty"`   // The base series used in the case the stream was downsampled May take one of the following values: distance, time
-}
 type AltitudeStream struct {
 	Data []float32 `json:"data"` // The sequence of altitude values for this stream, in meters
-	baseStream
+	Stream
 }
 
 type CadenceStream struct {
 	Data []int `json:"data"` //  The sequence of cadence values for this stream, in rotations per minute
-	baseStream
+	Stream
 }
 
 type DistanceStream struct {
 	Data []float32 `json:"data"` // The sequence of distance values for this stream, in meters
-	baseStream
+	Stream
 }
 
 type HeartrateStream struct {
 	Data []int `json:"data"` // The sequence of heart rate values for this stream, in beats per minute
-	baseStream
+	Stream
 }
 
 type LatLngStream struct {
 	Data []LatLng `json:"data"` // The sequence of lat/long values for this stream
-	baseStream
+	Stream
 }
 
 type MovingStream struct {
 	Data []bool // The sequence of moving values for this stream, as boolean values
-	baseStream
+	Stream
 }
 
 type PowerStream struct {
 	Data []int `json:"data"` // The sequence of power values for this stream, in watts
-	baseStream
+	Stream
 }
 
 type SmoothGradeStream struct {
 	Data []float32 `json:"data"` // The sequence of grade values for this stream, as percents of a grade
-	baseStream
+	Stream
 }
 
 type SmoothVelocityStream struct {
 	Data []float32 `json:"data"` // The sequence of velocity values for this stream, in meters per second
-	baseStream
+	Stream
 }
 
 type TemperatureStream struct {
 	Data []int `json:"data"` // The sequence of temperature values for this stream, in celsius degrees
-	baseStream
+	Stream
 }
 
 type TimeStream struct {
 	Data []int `json:"data"` // The sequence of time values for this stream, in seconds
-	baseStream
+	Stream
 }
 
 // Returns the given activity's streams. Requires activity:read scope. Requires activity:read_all scope for Only Me activities.
-func (s *StreamsService) GetActivityStreams(accessToken string, activityID int, keys []string) (*StreamSet, error) {
+// It defaults to all (all the following keys):
+//   - time, distance, latlng, altitude, velocity_smooth, heartrate, cadence, watts, temp, moving, grade_smooth
+func (s *StreamsService) GetActivityStreams(accessToken string, activityID int, keys ...string) (*StreamSet, error) {
 	params := url.Values{}
-	params.Add("keys", strings.Join(keys, ","))
+	if len(keys) == 0 {
+		params.Add("keys", "time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temp,moving,grade_smooth")
+	} else {
+		params.Add("keys", strings.Join(keys, ","))
+	}
+
 	params.Add("key_by_type", "true")
 
 	req, err := s.client.newRequest(requestOpts{
@@ -106,7 +118,7 @@ func (s *StreamsService) GetActivityStreams(accessToken string, activityID int, 
 }
 
 // Returns the given route's streams. Requires read_all scope for private routes.
-func (s *StreamsService) GetRouteStreams(accessToken string, routeID int) (*StreamSet, error) {
+func (s *StreamsService) GetRouteStreams(accessToken string, routeID int) ([]Stream, error) {
 	req, err := s.client.newRequest(requestOpts{
 		Path:        "routes/" + strconv.Itoa(routeID) + "/streams",
 		AccessToken: accessToken,
@@ -115,8 +127,8 @@ func (s *StreamsService) GetRouteStreams(accessToken string, routeID int) (*Stre
 		return nil, err
 	}
 
-	resp := new(StreamSet)
-	if err := s.client.do(req, resp); err != nil {
+	resp := []Stream{}
+	if err := s.client.do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -124,9 +136,15 @@ func (s *StreamsService) GetRouteStreams(accessToken string, routeID int) (*Stre
 }
 
 // Returns a set of streams for a segment effort completed by the authenticated athlete. Requires read_all scope.
-func (s *StreamsService) GetSegmentEffortStreams(accessToken string, segmentEffortID int, keys []string) (*StreamSet, error) {
+// It defaults to all (all the following keys):
+//   - time, distance, latlng, altitude, velocity_smooth, heartrate, cadence, watts, temp, moving, grade_smooth
+func (s *StreamsService) GetSegmentEffortStreams(accessToken string, segmentEffortID int, keys ...string) (*StreamSet, error) {
 	params := url.Values{}
-	params.Add("keys", strings.Join(keys, ","))
+	if len(keys) == 0 {
+		params.Add("keys", "time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temp,moving,grade_smooth")
+	} else {
+		params.Add("keys", strings.Join(keys, ","))
+	}
 	params.Add("key_by_type", "true")
 
 	req, err := s.client.newRequest(requestOpts{
@@ -147,9 +165,15 @@ func (s *StreamsService) GetSegmentEffortStreams(accessToken string, segmentEffo
 }
 
 // Returns a set of streams for a segment completed by the authenticated athlete. Requires read_all scope.
-func (s *StreamsService) GetSegmentStreams(accessToken string, segmentID int, keys []string) (*StreamSet, error) {
+// It defaults to all (all the following keys):
+//   - distance, latlng, altitude
+func (s *StreamsService) GetSegmentStreams(accessToken string, segmentID int, keys ...string) (*StreamSet, error) {
 	params := url.Values{}
-	params.Add("keys", strings.Join(keys, ","))
+	if len(keys) == 0 {
+		params.Add("keys", "distance,latlng,altitude")
+	} else {
+		params.Add("keys", strings.Join(keys, ","))
+	}
 	params.Add("key_by_type", "true")
 
 	req, err := s.client.newRequest(requestOpts{

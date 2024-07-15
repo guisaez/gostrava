@@ -167,20 +167,16 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 		if contentType == "application/json; charset=utf-8" {
 			err := json.NewDecoder(r).Decode(v)
 			if err != nil {
-				fmt.Println(string(buf.String()))
+				fmt.Println(buf.String())
 				return err
 			}
 		} else {
-			if b, ok := v.(*[]byte); ok {
-				*b = buf.Bytes()
-			} else if w, ok := v.(io.Writer); ok {
-				_, err := io.Copy(w, &buf)
-				if err != nil {
-					return err
-				}
-			} else {
-				return fmt.Errorf("v should be a *[]byte or io.Writer when downloading a file")
+			bodyBytes, err := io.ReadAll(r)
+			if err != nil {
+				return err
 			}
+			v = bodyBytes
+			fmt.Println(buf.String())
 		}
 	}
 

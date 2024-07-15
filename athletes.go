@@ -77,6 +77,8 @@ type ActivityTotal struct {
 	AchievementCount int `json:"achievement_count"` // The total number of achievements of the considered activities.
 }
 
+// *****************************************************
+
 type AthleteService service
 
 // Returns the activity stats of an athlete. Only includes data from activities set to Everyone's visibility.
@@ -99,7 +101,7 @@ func (s *AthleteService) GetAthleteStats(accessToken string, id int) (*AthleteSt
 
 // Returns a list of the routes created by the authenticated athlete. Private routes are filtered out
 // unless request by a token with read_all scope.
-func (s *RouteService) ListRoutes(accessToken string, id int, opts RequestParams) ([]RouteSummary, error) {
+func (s *AthleteService) ListRoutes(accessToken string, id int, opts RequestParams) ([]RouteSummary, error) {
 	params := url.Values{}
 
 	if opts.Page > 0 {

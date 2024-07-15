@@ -12,18 +12,18 @@ import (
 
 type ActivityDetailed struct {
 	ActivitySummary
-	AvailableZones []string                `json:"available_zones"`        // Activity available zones
-	BestEfforts    []SegmentEffortDetailed `json:"best_efforts,omitempty"` // A collection of SegmentEffortDetailed objects.
-	Calories       float32                 `json:"calories"`               // The number of kilocalories consumed during this activity
-	DeviceName     string                  `json:"device_name,"`           // The name of the device used to record the activity
-	Description    string                  `json:"description,omitempty"`  // The description of the activity
-	EmbedToken     string                  `json:"embed_token,omitempty"`  // The token used to embed a Strava activity
-	Gear           *GearSummary            `json:"gear,omitempty"`         // An instance of SummaryGear.
-	Laps           []Lap                   `json:"laps,omitempty"`         // A collection of Lap objects.
-	Photos         PhotosSummary           `json:"photos"`                 // An instance of PhotosSummary.
-	SegmentEfforts []SegmentEffortDetailed `json:"segment_efforts"`        // A collection of SegmentEffortDetailed objects.
-	SplitsMetric   []Split                 `json:"splits_metric"`          // The splits of this activity in metric units (for runs)
-	SplitsStandard []Split                 `json:"splits_standard"`        // The splits of this activity in imperial units (for runs)
+	AvailableZones []string                 `json:"available_zones"`        // Activity available zones
+	BestEfforts    []SegmentEffortDetailed  `json:"best_efforts,omitempty"` // A collection of SegmentEffortDetailed objects.
+	Calories       float32                  `json:"calories"`               // The number of kilocalories consumed during this activity
+	DeviceName     string                   `json:"device_name,"`           // The name of the device used to record the activity
+	Description    string                   `json:"description,omitempty"`  // The description of the activity
+	EmbedToken     string                   `json:"embed_token,omitempty"`  // The token used to embed a Strava activity
+	Gear           *GearSummary             `json:"gear,omitempty"`         // An instance of SummaryGear.
+	Laps           []Lap                    `json:"laps,omitempty"`         // A collection of Lap objects.
+	Photos         PhotosSummary            `json:"photos"`                 // An instance of PhotosSummary.
+	SegmentEfforts []*SegmentEffortDetailed `json:"segment_efforts"`        // A collection of SegmentEffortDetailed objects.
+	SplitsMetric   []*Split                 `json:"splits_metric"`          // The splits of this activity in metric units (for runs)
+	SplitsStandard []*Split                 `json:"splits_standard"`        // The splits of this activity in imperial units (for runs)
 }
 
 type ActivitySummary struct {
