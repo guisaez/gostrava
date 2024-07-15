@@ -12,25 +12,25 @@ type RouteDetailed struct {
 }
 
 type RouteSummary struct {
-	Athlete             *AthleteSummary `json:"athlete"`               // An instance of AthleteSummary.
-	Description         string          `json:"description"`           // The description of the route
-	Distance            float32         `json:"distance"`              // The route's distance, in meters
-	ElevationGain       float32         `json:"elevation_gain"`        // The route's elevation gain.
-	ID                  int             `json:"id"`                    // The unique identifier of this route
-	IdStr               string          `json:"id_str"`                // The unique identifier of the route in string format
-	Map                 PolylineMap     `json:"map"`                   // An instance of PolylineMap.
-	MapUrls             Urls            `json:"map_urls"`              //
-	Name                string          `json:"name"`                  // The name of this route
-	Private             bool            `json:"private"`               // Whether this route is private
-	ResourceState       int8            `json:"resource_state"`        //
-	Starred             bool            `json:"starred"`               // Whether this route is starred by the logged-in athlete
-	SubType             SubRouteType    `json:"sub_type"`              // This route's sub-type: "road" / "mountain_bike" / "cross" / "trail" / "mixed"
-	CreatedAt           TimeStamp       `json:"created_at"`            // The time at which the route was created
-	UpdatedAt           TimeStamp       `json:"updated_at"`            // The time at which the route was last updated
-	Timestamp           int             `json:"timestamp"`             // An epoch timestamp of when the route was created
-	Type                RouteType       `json:"type"`                  // This route's type "ride" / "run"
-	EstimatedMovingTime int             `json:"estimated_moving_time"` // Estimated time in seconds for the authenticated athlete to complete route
-	Waypoints           []Waypoint      `json:"waypoints"`             // The custom waypoints along this route
+	Athlete             *AthleteSummary  `json:"athlete"`               // An instance of AthleteSummary.
+	Description         string           `json:"description"`           // The description of the route
+	Distance            float32          `json:"distance"`              // The route's distance, in meters
+	ElevationGain       float32          `json:"elevation_gain"`        // The route's elevation gain.
+	ID                  int              `json:"id"`                    // The unique identifier of this route
+	IdStr               string           `json:"id_str"`                // The unique identifier of the route in string format
+	Map                 PolylineSummmary `json:"map"`                   // An instance of PolylineMap.
+	MapUrls             Urls             `json:"map_urls"`              //
+	Name                string           `json:"name"`                  // The name of this route
+	Private             bool             `json:"private"`               // Whether this route is private
+	ResourceState       int8             `json:"resource_state"`        //
+	Starred             bool             `json:"starred"`               // Whether this route is starred by the logged-in athlete
+	SubType             SubRouteType     `json:"sub_type"`              // This route's sub-type: "road" / "mountain_bike" / "cross" / "trail" / "mixed"
+	CreatedAt           TimeStamp        `json:"created_at"`            // The time at which the route was created
+	UpdatedAt           TimeStamp        `json:"updated_at"`            // The time at which the route was last updated
+	Timestamp           int              `json:"timestamp"`             // An epoch timestamp of when the route was created
+	Type                RouteType        `json:"type"`                  // This route's type "ride" / "run"
+	EstimatedMovingTime int              `json:"estimated_moving_time"` // Estimated time in seconds for the authenticated athlete to complete route
+	Waypoints           []Waypoint       `json:"waypoints"`             // The custom waypoints along this route
 }
 
 type Waypoint struct {

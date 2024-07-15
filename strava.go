@@ -1,7 +1,6 @@
 package gostrava
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -149,13 +148,10 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 		resp.Body.Close()
 	}()
 
-	var buf bytes.Buffer
-	r := io.TeeReader(resp.Body, &buf)
-
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
 		var errResponse Error
 
-		if err := json.NewDecoder(r).Decode(&errResponse); err != nil {
+		if err := json.NewDecoder(resp.Body).Decode(&errResponse); err != nil {
 			return err
 		}
 
@@ -165,22 +161,18 @@ func (c *Client) do(req *http.Request, v interface{}) error {
 	if v != nil {
 		contentType := resp.Header.Get("Content-Type")
 		if contentType == "application/json; charset=utf-8" {
-			err := json.NewDecoder(r).Decode(v)
+			err := json.NewDecoder(resp.Body).Decode(v)
 			if err != nil {
-				fmt.Println(buf.String())
 				return err
 			}
 		} else {
-			bodyBytes, err := io.ReadAll(r)
+			bodyBytes, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return err
 			}
 			v = bodyBytes
-			fmt.Println(buf.String())
 		}
 	}
-
-	fmt.Println(string(buf.String()))
 
 	return nil
 }

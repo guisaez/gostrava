@@ -17,7 +17,7 @@ type SegmentDetailed struct {
 	ElevationProfile  string `json:"elevation_profile"`
 	ElevationProfiles Urls   `json:"elevation_profiles"`
 
-	Map          *PolylineMap `json:"map,omitempty"`          // An instance of PolylineMap.
+	Map          *PolylineSummmary `json:"map,omitempty"`          // An instance of PolylineMap.
 	EffortCount  int          `json:"effort_count"`           // The total number of efforts for this segment
 	AthleteCount int          `json:"athlete_count"`          // The number of unique athletes who have an effort for this segment
 	StarCount    int          `json:"star_count"`             // The number of stars for this segment
@@ -45,8 +45,16 @@ type SegmentSummary struct {
 	Country       string  `json:"country"`        // The segment's country.
 	Private       bool    `json:"private"`        // Whether this segment is private.
 	Starred       bool    `json:"starred"`        // Whether this segment has been starred by the current athlete.
-	// AthletePREffort *SummaryPRSegmentEffort `json:"athlete_pr_effort,omitempty"` // An instance of SummaryPRSegmentEffort.
+	AthletePREffort *SummaryPRSegmentEffort `json:"athlete_pr_effort,omitempty"` // An instance of SummaryPRSegmentEffort.
 }
+
+type SummaryPRSegmentEffort struct {
+	PRActivityID  int       `json:"pr_activity_id"`  // The unique identifier of the activity related to the PR effort.
+	PRElapsedTime int       `json:"pr_elapsed_time"` // The elapsed time ot the PR effort.
+	PRDate        TimeStamp `json:"pr_date"`         //  The time at which the PR effort was started.
+	EffortCount   int       `json:"effort_count"`    // Number of efforts by the authenticated athlete on this segment.
+}
+
 
 type LocalLegend struct {
 	AthleteID         int    `json:"athlete_id"`
