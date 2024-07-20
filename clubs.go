@@ -75,7 +75,7 @@ type ClubService service
 
 // Returns a given club using its identifier
 func (s *ClubService) GetById(accessToken string, id int) (*ClubDetailed, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "clubs/" + strconv.Itoa(id),
 		AccessToken: accessToken,
 	})
@@ -84,7 +84,7 @@ func (s *ClubService) GetById(accessToken string, id int) (*ClubDetailed, error)
 	}
 
 	resp := new(ClubDetailed)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func (s *ClubService) ListAdministrators(accessToken string, id int, opts Reques
 		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "clubs/" + strconv.Itoa(id) + "/admins",
 		AccessToken: accessToken,
 	})
@@ -112,7 +112,7 @@ func (s *ClubService) ListAdministrators(accessToken string, id int, opts Reques
 	}
 
 	resp := []ClubAthlete{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -131,7 +131,7 @@ func (s *ClubService) ListActivities(accessToken string, id int, opts RequestPar
 		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "clubs/" + strconv.Itoa(id) + "/activities",
 		AccessToken: accessToken,
 	})
@@ -140,7 +140,7 @@ func (s *ClubService) ListActivities(accessToken string, id int, opts RequestPar
 	}
 
 	resp := []ClubActivity{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -158,7 +158,7 @@ func (s *ClubService) ListMembers(accessToken string, id int, opts RequestParams
 		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "clubs/" + strconv.Itoa(id) + "/members",
 		AccessToken: accessToken,
 	})
@@ -167,7 +167,7 @@ func (s *ClubService) ListMembers(accessToken string, id int, opts RequestParams
 	}
 
 	resp := []Member{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 

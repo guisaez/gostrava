@@ -22,7 +22,7 @@ type GearsService service
 
 // Returns an equipment using its identifier.
 func (s *GearsService) GetEquipment(accessToken string, id string) (*GearDetailed, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "gear/" + id,
 		AccessToken: accessToken,
 	})
@@ -31,7 +31,7 @@ func (s *GearsService) GetEquipment(accessToken string, id string) (*GearDetaile
 	}
 
 	resp := new(GearDetailed)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 

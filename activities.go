@@ -216,7 +216,7 @@ func (s *ActivityService) New(accessToken string, body NewActivity) (*ActivityDe
 		formData.Set("commute", "1")
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "activities",
 		Method:      http.MethodPost,
 		AccessToken: accessToken,
@@ -227,7 +227,7 @@ func (s *ActivityService) New(accessToken string, body NewActivity) (*ActivityDe
 	}
 
 	resp := new(ActivityDetailed)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -241,7 +241,7 @@ func (s *ActivityService) GetByID(accessToken string, id int, includeEfforts boo
 	params := url.Values{}
 	params.Add("include_all_efforts", "true")
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "activities/" + strconv.Itoa(id),
 		AccessToken: accessToken,
 		Body:        params,
@@ -251,7 +251,7 @@ func (s *ActivityService) GetByID(accessToken string, id int, includeEfforts boo
 	}
 
 	resp := &ActivityDetailed{}
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -281,7 +281,7 @@ func (s *ActivityService) ListActivityComments(accessToken string, id int, opts 
 		params.Set("after_cursor", opts.AfterCursor)
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "activities/" + strconv.Itoa(id) + "/comments",
 		AccessToken: accessToken,
 		Body:        params,
@@ -291,7 +291,7 @@ func (s *ActivityService) ListActivityComments(accessToken string, id int, opts 
 	}
 
 	resp := []Comment{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -310,7 +310,7 @@ func (s *ActivityService) ListActivityKudoers(accessToken string, id int, opts R
 		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "activities/" + strconv.Itoa(id) + "/kudos",
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
@@ -321,7 +321,7 @@ func (s *ActivityService) ListActivityKudoers(accessToken string, id int, opts R
 	}
 
 	resp := []AthleteSummary{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -331,7 +331,7 @@ func (s *ActivityService) ListActivityKudoers(accessToken string, id int, opts R
 // Returns the laps of an activity identified by an identifier. Requires activity:read for Everyone and
 // Follower activities. Required activity:read_all for OnlyMeActivities.
 func (s *ActivityService) ListActivityLaps(accessToken string, id int) ([]Lap, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "activities/" + strconv.Itoa(id) + "/laps",
 		AccessToken: accessToken,
 	})
@@ -340,7 +340,7 @@ func (s *ActivityService) ListActivityLaps(accessToken string, id int) ([]Lap, e
 	}
 
 	resp := []Lap{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -358,7 +358,7 @@ type GetActivityOpts struct {
 // Requires activity:read for Everyone and Followers activities.
 // Requires activity:read_all for Only Me activities.
 func (s *ActivityService) GetActivityZones(accessToken string, id int) ([]ActivityZone, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "activities/" + strconv.Itoa(id) + "/zones",
 		AccessToken: accessToken,
 	})
@@ -366,7 +366,7 @@ func (s *ActivityService) GetActivityZones(accessToken string, id int) ([]Activi
 		return nil, err
 	}
 	resp := []ActivityZone{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -392,7 +392,7 @@ func (s *ActivityService) Update(accessToken string, id int, body UpdatedActivit
 		return nil, err
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "activities/" + strconv.Itoa(id),
 		AccessToken: accessToken,
 		Method:      http.MethodPut,
@@ -403,7 +403,7 @@ func (s *ActivityService) Update(accessToken string, id int, body UpdatedActivit
 	}
 
 	resp := new(ActivityDetailed)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 

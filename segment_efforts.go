@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 )
+
 type SegmentEffortDetailed struct {
 	Name         *string         `json:"name,omitempty"`              // The name of the segment on which this effort was performed
 	Activity     *ActivityMeta   `json:"activity,omitempty"`          // An instance of MetaActivity.
@@ -39,7 +40,7 @@ type SegmentEffortsService service
 
 // Returns a segment effort from an activity that is owned by the authenticated athlete. Requires subscription.
 func (s *SegmentEffortsService) GetSegmentEffort(accessToken string, id int) (*SegmentEffortDetailed, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "segment_efforts/" + strconv.Itoa(id),
 		AccessToken: accessToken,
 	})
@@ -48,7 +49,7 @@ func (s *SegmentEffortsService) GetSegmentEffort(accessToken string, id int) (*S
 	}
 
 	resp := new(SegmentEffortDetailed)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -78,7 +79,7 @@ func (s *SegmentEffortsService) ListSegmentEfforts(accessToken string, segmentID
 		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "segment_efforts",
 		AccessToken: accessToken,
 	})
@@ -87,7 +88,7 @@ func (s *SegmentEffortsService) ListSegmentEfforts(accessToken string, segmentID
 	}
 
 	resp := []SegmentEffortDetailed{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
