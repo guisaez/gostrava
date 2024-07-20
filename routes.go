@@ -109,7 +109,7 @@ type RouteService service
 
 // Returns a route using its identifier. Requires read_all scope for private routes.
 func (s *RouteService) GetById(accessToken string, id int) (*RouteDetailed, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "routes/" + strconv.Itoa(id),
 		AccessToken: accessToken,
 	})
@@ -118,7 +118,7 @@ func (s *RouteService) GetById(accessToken string, id int) (*RouteDetailed, erro
 	}
 
 	resp := new(RouteDetailed)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +128,7 @@ func (s *RouteService) GetById(accessToken string, id int) (*RouteDetailed, erro
 // Returns a GPX file of the route. Required read_all scope for private routes.
 // ExportRouteGPX returns a GPX file of the route.
 func (s *RouteService) ExportRouteGPX(accessToken string, id int) ([]byte, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "routes/" + strconv.Itoa(id) + "/export_gpx",
 		AccessToken: accessToken,
 	})
@@ -137,7 +137,7 @@ func (s *RouteService) ExportRouteGPX(accessToken string, id int) ([]byte, error
 	}
 
 	resp := []byte{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -146,7 +146,7 @@ func (s *RouteService) ExportRouteGPX(accessToken string, id int) ([]byte, error
 
 // Returns a TCX file of the route.. Requires read_all scope for private routes.
 func (s *RouteService) ExportRouteTCX(accessToken string, id int) ([]byte, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "routes/" + strconv.Itoa(id) + "/export_tcx",
 		AccessToken: accessToken,
 	})
@@ -155,7 +155,7 @@ func (s *RouteService) ExportRouteTCX(accessToken string, id int) ([]byte, error
 	}
 
 	resp := []byte{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 

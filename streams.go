@@ -102,7 +102,7 @@ func (s *StreamsService) GetActivityStreams(accessToken string, activityID int, 
 
 	params.Add("key_by_type", "true")
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "streams/" + strconv.Itoa(activityID) + "/activities",
 		AccessToken: accessToken,
 		Body:        params,
@@ -112,7 +112,7 @@ func (s *StreamsService) GetActivityStreams(accessToken string, activityID int, 
 	}
 
 	resp := new(StreamSet)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -121,7 +121,7 @@ func (s *StreamsService) GetActivityStreams(accessToken string, activityID int, 
 
 // Returns the given route's streams. Requires read_all scope for private routes.
 func (s *StreamsService) GetRouteStreams(accessToken string, routeID int) ([]Stream, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "routes/" + strconv.Itoa(routeID) + "/streams",
 		AccessToken: accessToken,
 	})
@@ -130,7 +130,7 @@ func (s *StreamsService) GetRouteStreams(accessToken string, routeID int) ([]Str
 	}
 
 	resp := []Stream{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -149,7 +149,7 @@ func (s *StreamsService) GetSegmentEffortStreams(accessToken string, segmentEffo
 	}
 	params.Add("key_by_type", "true")
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "segment_efforts/" + strconv.Itoa(segmentEffortID) + "/streams",
 		AccessToken: accessToken,
 		Body:        params,
@@ -159,7 +159,7 @@ func (s *StreamsService) GetSegmentEffortStreams(accessToken string, segmentEffo
 	}
 
 	resp := new(StreamSet)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -178,7 +178,7 @@ func (s *StreamsService) GetSegmentStreams(accessToken string, segmentID int, ke
 	}
 	params.Add("key_by_type", "true")
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "segments/" + strconv.Itoa(segmentID) + "/streams",
 		AccessToken: accessToken,
 		Body:        params,
@@ -188,7 +188,7 @@ func (s *StreamsService) GetSegmentStreams(accessToken string, segmentID int, ke
 	}
 
 	resp := new(StreamSet)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 

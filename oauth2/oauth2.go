@@ -1,9 +1,11 @@
-package gostrava
+package oauth2
 
 import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/guisaez/gostrava"
 )
 
 const oauthBaseUrl string = "https://www.strava.com/oauth"
@@ -20,7 +22,7 @@ const (
 	ActivityWrite   Scope = "activity:write"
 )
 
-type OAuthService struct {
+type OAuth struct {
 	// The application's ID, obtained during registration
 	ClientID string
 
@@ -30,15 +32,61 @@ type OAuthService struct {
 	// Scopes the application will be trying to access
 	Scopes []Scope
 
-	client *Client
+	client *gostrava.Client
 }
 
-func (oauth *OAuthService) Register(clientID, clientSecret string, scopes []Scope) *OAuthService {
-	oauth.ClientID = clientID
-	oauth.ClientSecret = clientSecret
-	oauth.Scopes = scopes
+func Register(clientId, clientSecret string, scopes ...Scope) *OAuth {
+	return &OAuth{
+		ClientID:     clientId,
+		ClientSecret: clientSecret,
+		Scopes:       scopes,
 
-	return oauth
+		client: gostrava.NewClient(nil),
+	}
+}
+
+type Authorization struct {
+	AccessToken  string                   `json:"access_token"`
+	ExpiresAt    int64                    `json:"expires_at"`           // The number of seconds since the epoch when the provided access token will expire
+	ExpiresIn    int                      `json:"expires_in"`           // Seconds until the short-lived access token will expire
+	RefreshToken string                   `json:"refresh_token"`        // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work
+	TokenType    *string                  `json:"token_type,omitempty"` // Bearer
+	Athlete      *gostrava.AthleteSummary `json:"athlete,omitempty"`    // A summary of the athlete information
+	Scopes       []Scope                  `json:"scopes,omitempty"`     // Scopes the user accepted
+}
+
+// This function handles the exchange step of an authorization code for an acces token in the
+// OAuth 2.0 authorization code grant flow.
+//
+// POST: "https://www.strava.com/oauth/token"
+func (oauth *OAuth) Exchange(code string, scopes string) (*Authorization, error) {
+	formData := url.Values{
+		"client_id":     {oauth.ClientID},
+		"client_secret": {oauth.ClientSecret},
+		"code":          {code},
+		"grant_type":    {"authorization_code"},
+	}
+
+	url, _ := url.Parse(oauthBaseUrl)
+
+	req, err := oauth.client.NewRequest(gostrava.RequestOpts{
+		URL:    url,
+		Path:   "token",
+		Body:   formData,
+		Method: http.MethodPost,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	auth := new(Authorization)
+	if err := oauth.client.Do(req, auth); err != nil {
+		return nil, err
+	}
+
+	auth.Scopes = splitScopes(scopes)
+
+	return auth, nil
 }
 
 // Generates the authentication url that the user will be redirected to
@@ -47,7 +95,7 @@ func (oauth *OAuthService) Register(clientID, clientSecret string, scopes []Scop
 //   - force: If true, it will always show the authorization prompt even if the user has already
 //     authorized the current application.
 //   - state: Returned in the redirect URI. Useful if the authentication is done from various points in an app
-func (oauth *OAuthService) MakeAuthCodeURL(callbackUrl string, force bool, state ...string) *url.URL {
+func (oauth *OAuth) MakeAuthCodeURL(callbackUrl string, force bool, state ...string) *url.URL {
 	authorizeUrl, _ := url.Parse(oauthBaseUrl)
 	authorizeUrl = authorizeUrl.JoinPath("authorize")
 
@@ -73,55 +121,11 @@ func (oauth *OAuthService) MakeAuthCodeURL(callbackUrl string, force bool, state
 	return authorizeUrl
 }
 
-type Authorization struct {
-	AccessToken  string          `json:"access_token"`
-	ExpiresAt    int64           `json:"expires_at"`           // The number of seconds since the epoch when the provided access token will expire
-	ExpiresIn    int             `json:"expires_in"`           // Seconds until the short-lived access token will expire
-	RefreshToken string          `json:"refresh_token"`        // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work
-	TokenType    *string         `json:"token_type,omitempty"` // Bearer
-	Athlete      *AthleteSummary `json:"athlete,omitempty"`    // A summary of the athlete information
-	Scopes       []Scope         `json:"scopes,omitempty"`     // Scopes the user accepted
-}
-
-// This function handles the exchange step of an authorization code for an acces token in the
-// OAuth 2.0 authorization code grant flow.
-//
-// POST: "https://www.strava.com/oauth/token"
-func (oauth *OAuthService) Exchange(code string, scopes string) (*Authorization, error) {
-	formData := url.Values{
-		"client_id":     {oauth.ClientID},
-		"client_secret": {oauth.ClientSecret},
-		"code":          {code},
-		"grant_type":    {"authorization_code"},
-	}
-
-	url, _ := url.Parse(oauthBaseUrl)
-
-	req, err := oauth.client.newRequest(requestOpts{
-		URL:    url,
-		Path:   "token",
-		Body:   formData,
-		Method: http.MethodPost,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	auth := new(Authorization)
-	if err := oauth.client.do(req, auth); err != nil {
-		return nil, err
-	}
-
-	auth.Scopes = splitScopes(scopes)
-
-	return auth, nil
-}
-
 // This function handles the process of using a refresh token to obtain a new access token in the
 // OAuth 2.0 authorization flow.
 //
 // POST "https://www.strava.com/oauth/refresh"
-func (oauth *OAuthService) Refresh(refreshToken string) (*Authorization, error) {
+func (oauth *OAuth) Refresh(refreshToken string) (*Authorization, error) {
 	formData := url.Values{
 		"client_id":     {oauth.ClientID},
 		"client_secret": {oauth.ClientSecret},
@@ -131,7 +135,7 @@ func (oauth *OAuthService) Refresh(refreshToken string) (*Authorization, error) 
 
 	url, _ := url.Parse(oauthBaseUrl)
 
-	req, err := oauth.client.newRequest(requestOpts{
+	req, err := oauth.client.NewRequest(gostrava.RequestOpts{
 		URL:    url,
 		Path:   "token",
 		Body:   formData,
@@ -142,7 +146,7 @@ func (oauth *OAuthService) Refresh(refreshToken string) (*Authorization, error) 
 	}
 
 	refresh := new(Authorization)
-	if err := oauth.client.do(req, refresh); err != nil {
+	if err := oauth.client.Do(req, refresh); err != nil {
 		return nil, err
 	}
 
@@ -152,14 +156,14 @@ func (oauth *OAuthService) Refresh(refreshToken string) (*Authorization, error) 
 // This function will invalidate all refresh_tokens and access_tokens that the application has for the athlete.
 //
 // POST "https://www.strava.com/oauth/deathorize"
-func (oauth *OAuthService) RevokeAccess(accessToken string) error {
+func (oauth *OAuth) RevokeAccess(accessToken string) error {
 	formData := url.Values{
 		"access_token": {accessToken},
 	}
 
 	url, _ := url.Parse(oauthBaseUrl)
 
-	req, err := oauth.client.newRequest(requestOpts{
+	req, err := oauth.client.NewRequest(gostrava.RequestOpts{
 		URL:    url,
 		Path:   "deauthorize",
 		Method: http.MethodPost,
@@ -169,7 +173,7 @@ func (oauth *OAuthService) RevokeAccess(accessToken string) error {
 		return err
 	}
 
-	return oauth.client.do(req, nil)
+	return oauth.client.Do(req, nil)
 }
 
 type OAuthError struct {
@@ -193,7 +197,7 @@ func (e *OAuthError) Error() string {
 //
 // Returns:
 // - An HTTP handler function (http.HandlerFunc) that processes the OAuth authorization response.
-func (oauth *OAuthService) OAuthHandler(
+func (oauth *OAuth) OAuthHandler(
 	onSuccess func(token *Authorization, w http.ResponseWriter, r *http.Request),
 	onError func(err error, w http.ResponseWriter, r *http.Request),
 ) http.HandlerFunc {

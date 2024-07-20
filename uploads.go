@@ -30,7 +30,7 @@ type Upload struct {
 
 // Uploads a new data file to create an activity from. Requires activity:write scope.
 func (s *UploadService) UploadActivity(accessToken string, data CreateUploadRequest) (*Upload, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "uploads",
 		Method:      http.MethodPost,
 		AccessToken: accessToken,
@@ -41,7 +41,7 @@ func (s *UploadService) UploadActivity(accessToken string, data CreateUploadRequ
 	}
 
 	resp := new(Upload)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -50,7 +50,7 @@ func (s *UploadService) UploadActivity(accessToken string, data CreateUploadRequ
 
 // Returns an upload for a given identifier. Requires activity:write scope.
 func (s *UploadService) GetById(accessToken string, uploadID int) (*Upload, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "uploads/" + strconv.Itoa(uploadID),
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
@@ -60,7 +60,7 @@ func (s *UploadService) GetById(accessToken string, uploadID int) (*Upload, erro
 	}
 
 	resp := new(Upload)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 

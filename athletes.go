@@ -83,7 +83,7 @@ type AthleteService service
 
 // Returns the activity stats of an athlete. Only includes data from activities set to Everyone's visibility.
 func (s *AthleteService) GetAthleteStats(accessToken string, id int) (*AthleteStats, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "athletes/" + strconv.Itoa(id) + "/stats",
 		AccessToken: accessToken,
 	})
@@ -92,7 +92,7 @@ func (s *AthleteService) GetAthleteStats(accessToken string, id int) (*AthleteSt
 	}
 
 	resp := new(AthleteStats)
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -111,7 +111,7 @@ func (s *AthleteService) ListRoutes(accessToken string, id int, opts RequestPara
 		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "athletes/" + strconv.Itoa(id) + "/routes",
 		AccessToken: accessToken,
 		Body:        params,
@@ -121,7 +121,7 @@ func (s *AthleteService) ListRoutes(accessToken string, id int, opts RequestPara
 	}
 
 	resp := []RouteSummary{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 

@@ -12,7 +12,7 @@ type CurrentAthleteService service
 // Returns the currently authenticated athlete. Tokens with profile:read_all scope will receive
 // a detailed athlete representation; all others will receive a SummaryAthlete representation
 func (s *CurrentAthleteService) GetAthlete(accessToken string) (*AthleteDetailed, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "athlete",
 		Method:      http.MethodGet,
 		AccessToken: accessToken,
@@ -22,7 +22,7 @@ func (s *CurrentAthleteService) GetAthlete(accessToken string) (*AthleteDetailed
 	}
 
 	resp := new(AthleteDetailed)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -31,7 +31,7 @@ func (s *CurrentAthleteService) GetAthlete(accessToken string) (*AthleteDetailed
 
 // Returns the current athlete's heart rate and power zones. Requires profile:read_all.
 func (s *CurrentAthleteService) GetZones(accessToken string) (*Zones, error) {
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "athlete/zones",
 		AccessToken: accessToken,
 	})
@@ -40,7 +40,7 @@ func (s *CurrentAthleteService) GetZones(accessToken string) (*Zones, error) {
 	}
 
 	resp := new(Zones)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func (s *CurrentAthleteService) Update(accessToken string, updatedAthlete Update
 	params := url.Values{}
 	params.Set("weight", fmt.Sprintf("%.2f", updatedAthlete.Weight))
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "athlete",
 		Method:      http.MethodPut,
 		AccessToken: accessToken,
@@ -67,7 +67,7 @@ func (s *CurrentAthleteService) Update(accessToken string, updatedAthlete Update
 	}
 
 	resp := new(AthleteDetailed)
-	if err := s.client.do(req, resp); err != nil {
+	if err := s.client.Do(req, resp); err != nil {
 		return nil, err
 	}
 
@@ -85,7 +85,7 @@ func (s *CurrentAthleteService) ListClubs(accessToken string, opts RequestParams
 		params.Set("per_page", strconv.Itoa(opts.PerPage))
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "athlete/clubs",
 		AccessToken: accessToken,
 	})
@@ -94,7 +94,7 @@ func (s *CurrentAthleteService) ListClubs(accessToken string, opts RequestParams
 	}
 
 	resp := []ClubSummary{}
-	if err := s.client.do(req, &resp); err != nil {
+	if err := s.client.Do(req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -119,7 +119,7 @@ func (s *CurrentAthleteService) ListActivities(accessToken string, opts GetActiv
 		params.Set("after", strconv.Itoa(opts.After))
 	}
 
-	req, err := s.client.newRequest(requestOpts{
+	req, err := s.client.NewRequest(RequestOpts{
 		Path:        "athlete/activities",
 		AccessToken: accessToken,
 		Body:        params,
@@ -129,7 +129,7 @@ func (s *CurrentAthleteService) ListActivities(accessToken string, opts GetActiv
 	}
 
 	var resp []ActivitySummary
-	err = s.client.do(req, &resp)
+	err = s.client.Do(req, &resp)
 	if err != nil {
 		return nil, err
 	}

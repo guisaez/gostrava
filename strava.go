@@ -18,7 +18,6 @@ type Client struct {
 	// HTTP Client used to communicate with the server
 	httpClient *http.Client
 
-	OAuth          *OAuthService
 	Athletes       *AthleteService
 	Activities     *ActivityService
 	Clubs          *ClubService
@@ -48,7 +47,6 @@ func NewClient(httpClient *http.Client) *Client {
 		httpClient: httpClient,
 	}
 
-	c.OAuth = &OAuthService{client: c}
 	c.Athletes = &AthleteService{client: c}
 	c.Activities = &ActivityService{client: c}
 	c.CurrentAthlete = &CurrentAthleteService{client: c}
@@ -63,7 +61,7 @@ func NewClient(httpClient *http.Client) *Client {
 	return c
 }
 
-type requestOpts struct {
+type RequestOpts struct {
 	// HTTP Method
 	Method string
 
@@ -80,7 +78,7 @@ type requestOpts struct {
 	Body interface{}
 }
 
-func (c *Client) newRequest(opts requestOpts) (*http.Request, error) {
+func (c *Client) NewRequest(opts RequestOpts) (*http.Request, error) {
 	if opts.Method == "" {
 		opts.Method = http.MethodGet
 	}
@@ -138,7 +136,7 @@ func (c *Client) newRequest(opts requestOpts) (*http.Request, error) {
 	return req, nil
 }
 
-func (c *Client) do(req *http.Request, v interface{}) error {
+func (c *Client) Do(req *http.Request, v interface{}) error {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
