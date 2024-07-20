@@ -1,5 +1,5 @@
 module github.com/guisaez/gostrava
 
-go 1.22.2
+retract 1.2.0
 
-revoke 1.2.0
+go 1.22.2
