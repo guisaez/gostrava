@@ -10,69 +10,11 @@ package gostrava
 // 	"time"
 // )
 
-// const OAuthBaseURL string = "https://www.strava.com/oauth/"
 
-// const (
-// 	oauthAuthorizationRequestSlug string = "authoriza"
-// 	oauthGenerateTokenRequestSlug string = "token"
-// 	oauthRevokeTokenRequestSlug   string = "revoke"
-// )
 
-// type ScopeString string
 
-// const (
-// 	Read            ScopeString = "read"
-// 	ReadAll         ScopeString = "read_all"
-// 	ProfileReadAll  ScopeString = "profile:read_all"
-// 	ProfileWrite    ScopeString = "profile:write"
-// 	ActivityRead    ScopeString = "activity:read"
-// 	ActivityReadAll ScopeString = "activity:read_all"
-// 	ActivityWrite   ScopeString = "activity:write"
-// )
 
-// type OAuth struct {
-// 	clientID     string
-// 	clientSecret string
-// }
 
-// // Retrieves the current clientID used by the OAuth2 client.
-// func (c *Client) ClientID() string {
-// 	return c.oauth.clientID
-// }
-
-// // Retrieves the clientSecret used by the OAuth2 client.
-// func (c *Client) ClientSecret() string {
-// 	return c.oauth.clientSecret
-// }
-
-// // Sets a new clientID for the OAuth2 client.
-// func (c *Client) SetClientID(clientID string) {
-// 	c.oauth.clientID = clientID
-// }
-
-// // Sets a new clientSecret for the OAuth2 client.
-// func (c *Client) SetClientSecret(clientSecret string) {
-// 	c.oauth.clientSecret = clientSecret
-// }
-
-// // AuthorizationCodeURL generates the authentication URL that the user will be redirected to
-// // in order to initiate the OAuthFlow.
-// //
-// // Args:
-// //   - redirectURI: The URI to which the authorization server will redirect the user-agent
-// //     after the user grants or denies permission. This URI must be registered with the
-// //     authorization server as part of the client registration.
-// //   - state: An opaque value used by the client to maintain state between the request and callback.
-// //     Typically used to prevent CSRF attacks and to maintain user state.
-// //   - force: If true, it will force the authorization server to prompt the user for consent
-// //     even if they have already done so for the current application.
-// //   - scopes: A list of scopes (permissions) that the application requests access to.
-// //
-// // Returns:
-// //   - string: The fully formed URL that the user-agent should be redirected to initiate the OAuthFlow.
-// func (c *Client) AuthorizationCodeURL(redirectURI, state string, force bool, scopes []ScopeString) string {
-// 	return MakeAuthorizationCodeURL(c.oauth.clientID, c.oauth.clientSecret, redirectURI, state, force, scopes)
-// }
 
 // type serverMessage struct {
 // 	Type    string
