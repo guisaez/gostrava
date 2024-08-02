@@ -1,177 +1,172 @@
 package gostrava
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"net"
-// 	"net/http"
-// 	"net/url"
-// 	"strings"
-// 	"time"
-// )
+import (
+	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+)
 
+// OAuthBaseURL is the base URL for OAuth2 operations with Strava.
+const OAuthBaseURL string = "https://www.strava.com/oauth/"
 
+// OAuth request slugs.
+const (
+	oauthAuthorizationRequestSlug string = "authorize"
+	oauthGenerateTokenRequestSlug string = "token"
+	oauthRevokeTokenRequestSlug   string = "revoke"
+)
 
+// Scope represents the different scopes of access that can be requested from Strava.
+type Scope string
 
+// Different OAuth scopes for accessing Strava data.
+const (
+	Read            Scope = "read"
+	ReadAll         Scope = "read_all"
+	ProfileReadAll  Scope = "profile:read_all"
+	ProfileWrite    Scope = "profile:write"
+	ActivityRead    Scope = "activity:read"
+	ActivityReadAll Scope = "activity:read_all"
+	ActivityWrite   Scope = "activity:write"
+)
 
+// OAuth contains the client credentials and scopes for OAuth2 authentication.
+type OAuth struct {
+	scopes       []Scope
+	clientID     string
+	clientSecret string
+}
 
+// RefreshTokenResponse represents the response returned when a refresh token is exchanged for a new access token.
+type RefreshTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresAt    int64  `json:"expires_at"`
+	ExpiresIn    int64  `json:"expires_in"`
+}
 
-// type serverMessage struct {
-// 	Type    string
-// 	Message string
-// 	Scopes  []ScopeString
-// }
+// AccessTokenResponse represents the response returned when an authorization code is exchanged for an access token.
+type AccessTokenResponse struct {
+	AccessToken  string      `json:"access_token"`
+	RefreshToken string      `json:"refresh_token"`
+	ExpiresAt    int64       `json:"expires_at"`
+	ExpiresIn    int64       `json:"expires_in"`
+	TokenType    string      `json:"token_type"`
+	Athlete      interface{} `json:"athlete"`
+	Scopes       []Scope     `json:"scopes"`
+}
 
-// func (c *Client) AuthorizationCodeRequest(redirectURI string, state string, force bool, scopes []ScopeString) (*AccessTokenResponse, error) {
+// IsExpired checks if the access token is expired.
+func (a *AccessTokenResponse) IsExpired() bool {
+	return time.Unix(a.ExpiresAt, 0).Before(time.Now())
+}
 
-// 	authURL := c.AuthorizationCodeURL(redirectURI, state, force, scopes)
+// OAuthFlowOptions holds configuration options for the OAuth2 flow.
+type OAuthFlowOptions struct {
+	State string // A state parameter used to maintain state between the request and callback.
+	Force bool   // If true, forces the user to re-authenticate.
+}
 
-// 	srvChan := make(chan int8)
-// 	srvResponse := make(chan serverMessage, 1)
-// 	errChan := make(chan serverMessage, 1)
+// AuthorizationCodeURL generates the authentication URL to initiate the OAuth2 flow.
+func (c *Strava) AuthorizationCodeURL(redirectURI string, options OAuthFlowOptions) string {
+	return MakeAuthorizationCodeURL(c.oauth.clientID, c.oauth.clientSecret, redirectURI, c.oauth.scopes, options)
+}
 
-// 	var srv *http.Server
+// MakeAuthorizationCodeURL constructs the URL to initiate the OAuth2 flow.
+func MakeAuthorizationCodeURL(
+	clientID, clientSecret, redirectURI string, scopes []Scope, options OAuthFlowOptions,
+) string {
+	q := url.Values{}
+	q.Set("response_type", "code")
+	q.Set("client_id", clientID)
+	q.Set("redirect_uri", redirectURI)
+	q.Set("scope", joinScopes(scopes))
+	if options.State != "" {
+		q.Set("state", options.State)
+	}
+	if options.Force {
+		q.Set("approval_prompt", "force")
+	}
 
-// 	localRedirect := strings.Contains(redirectURI, "localhost") || strings.Contains(redirectURI, "127.0.0.1")
-// 	if localRedirect {
-// 		// Starts a localhost server that will handle the redirect url
-// 		u, err := url.Parse(redirectURI)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("failed to parse redirect URI: %s", err)
-// 		}
-// 		_, port, err := net.SplitHostPort(u.Host)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("failed to split the redirect uri into host and port segments: %s", err)
-// 		}
+	return fmt.Sprintf("%s%s?%s", OAuthBaseURL, oauthAuthorizationRequestSlug, q.Encode())
+}
 
-// 		srv := &http.Server{Addr: ":" + port}
+// AuthorizationTokenURL generates the URL for requesting an access token using an authorization code.
+func (c *Strava) AuthorizationTokenURL(code string) string {
+	return MakeAuthorizationTokenURL(c.oauth.clientID, c.oauth.clientSecret, code)
+}
 
-// 		redirectPath := u.EscapedPath()
-// 		http.HandleFunc(redirectPath, func(w http.ResponseWriter, r *http.Request) {
+// MakeAuthorizationTokenURL constructs the URL for requesting an access token from the OAuth server.
+func MakeAuthorizationTokenURL(clientID, clientSecret, code string) string {
+	q := url.Values{}
+	q.Set("client_id", clientID)
+	q.Set("client_secret", clientSecret)
+	q.Set("code", code)
+	q.Set("grant_type", "authorization_code")
 
-// 			q := r.URL.Query()
+	return fmt.Sprintf("%s%s?%s", OAuthBaseURL, oauthGenerateTokenRequestSlug, q.Encode())
+}
 
-// 			errs := q.Get("error")
-// 			if errs == "" {
-// 				w.Write([]byte("Got an error from the server: " + errs))
-// 				errChan <- serverMessage{Type: "error", Message: errs}
-// 				return
-// 			}
+// RefreshTokenURL generates a URL for requesting a new access token using a refresh token.
+func (c *Strava) RefreshTokenURL(refreshToken string) string {
+	return MakeRefreshTokenURL(c.ClientID(), c.ClientSecret(), refreshToken)
+}
 
-// 			code, scopes := q.Get("code"), strings.Split(q.Get("scope"), ",")
+// MakeRefreshTokenURL constructs the URL for refreshing an access token using a refresh token.
+func MakeRefreshTokenURL(clientID, clientSecret, refreshToken string) string {
+	q := url.Values{}
+	q.Set("client_id", clientID)
+	q.Set("client_secret", clientSecret)
+	q.Set("refresh_token", refreshToken)
+	q.Set("grant_type", "refresh_token")
 
-// 			w.Write([]byte("if you see this, code and scopes have been retrived! you can close this window"))
+	return fmt.Sprintf("%s%s?%s", OAuthBaseURL, oauthRevokeTokenRequestSlug, q.Encode())
+}
 
-// 			var scopesString []ScopeString
-// 			for _, s := range scopes {
-// 				scopesString = append(scopesString, ScopeString(s))
-// 			}
+// AuthorizationTokenRequest exchanges an authorization code for an access token.
+func (s *Strava) AuthorizationTokenRequest(code string) (AccessTokenResponse, error) {
+	authTokenURL := s.AuthorizationTokenURL(code)
 
-// 			srvResponse <- serverMessage{
-// 				Type:    "code",
-// 				Message: code,
-// 				Scopes:  scopesString,
-// 			}
-// 		})
+	authResp := new(AccessTokenResponse)
 
-// 		go func() {
-// 			srvChan <- 1
-// 			err := srv.ListenAndServe()
-// 			if err != nil && err != http.ErrServerClosed {
-// 				fmt.Printf("error while serving localy: %s\n, err")
-// 			}
-// 		}()
+	err := s.client.NewRequest(RequestOptions{
+		URL:    authTokenURL,
+		Method: http.MethodPost,
+	}, authResp)
+	if err != nil {
+		return AccessTokenResponse{}, err
+	}
 
-// 		<-srvChan
-// 	}
+	return *authResp, nil
+}
 
-// 	fmt.Println("Redirect, go to the follwoing authorization URL to begin OAuth2 flow: \n %s\n\n", authURL)
+// RefreshTokenRequest exchanges a refresh token for a new access token.
+func (s *Strava) RefreshTokenRequest(refreshToken string) (RefreshTokenResponse, error) {
+	tokenURL := s.RefreshTokenURL(refreshToken)
 
-// 	code, userAgreedScopes := "", []ScopeString{}
+	refreshTokenResp := new(RefreshTokenResponse)
 
-// 	var srvRes serverMessage
+	err := s.client.NewRequest(RequestOptions{
+		URL:    tokenURL,
+		Method: http.MethodPost,
+	}, refreshTokenResp)
+	if err != nil {
+		return RefreshTokenResponse{}, err
+	}
 
-// 	if localRedirect {
-// 		// we wait for the code to be returned by the server
-// 		srvRes = <-srvResponse
+	return *refreshTokenResp, nil
+}
 
-// 		if srvRes.Type == "error" {
-// 			return nil, fmt.Errorf("authroization error: %s\n", srvRes.Message)
-// 		}
+// --------- Helper ---------
 
-// 		code = srvRes.Message
-// 		userAgreedScopes = srvRes.Scopes
+// joinScopes joins multiple scopes into a single comma-separated string.
+func joinScopes(scopes []Scope) string {
+	stringScopes := make([]string, len(scopes))
+	for i, scope := range scopes {
+		stringScopes[i] = string(scope)
+	}
 
-// 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-// 		defer cancel()
-// 		if err := srv.Shutdown(ctx); err != nil {
-// 			fmt.Printf("error while shutting down local server: %s\n", err)
-// 		}
-// 	} else {
-// 		fmt.Println("Enter code and press enter:\n")
-// 		_, err := fmt.Scan(&code)
-// 		if err != nil {
-// 			return fmt.Errorf("failed to read code from input: %s", err)
-// 		}
-// 	}
-
-// 	if code == "" {
-// 		return fmt.Errorf("No code was recevied from oAuth2 flow")
-// 	}
-
-
-// }
-
-// type AccessTokenResponse struct {
-// 	AccessToken  string `json:"access_token"`
-// 	ExpiresAt    int64  `json:"expires_at"`    // The number of seconds since the epoch when the provided access token will expire
-// 	ExpiresIn    int    `json:"expires_in"`    // Seconds until the short-lived access token will expire
-// 	RefreshToken string `json:"refresh_token"` // The refresh token for this user, to be used to get the next access token for this user. Please expect that this value can change anytime you retrieve a new access token. Once a new refresh token code has been returned, the older code will no longer work
-// 	TokenType    string `json:"token_type"`    // Bearer
-// 	// Athlete      *gostrava.AthleteSummary `json:"athlete,omitempty"`    // A summary of the athlete information
-// 	// Scopes       []Scope                  `json:"scopes,omitempty"`     // Scopes the user accepted
-// }
-
-// // MakeAuthorizationCodeURL generates the authentication URL that the user will be redirected to
-// // in order to initiate the OAuthFlow.
-// //
-// // Args:
-// //   - clientID: The ID assigned to the client application by the authorization server.
-// //   - clientSecret: The client secret used for authentication with the authorization server.
-// //   - redirectURI: The URI to which the authorization server will redirect the user-agent
-// //     after the user grants or denies permission. This URI must be registered with the
-// //     authorization server as part of the client registration.
-// //   - state: An opaque value used by the client to maintain state between the request and callback.
-// //     Typically used to prevent CSRF attacks and to maintain user state.
-// //   - force: If true, it will force the authorization server to prompt the user for consent
-// //     even if they have already done so for the current application.
-// //   - scopes: A list of scopes (permissions) that the application requests access to.
-// //
-// // Returns:
-// //   - string: The fully formed URL that the user-agent should be redirected to initiate the OAuthFlow.
-// func MakeAuthorizationCodeURL(
-// 	clientID, clientSecret, redirectURI, state string,
-// 	force bool, scopes []ScopeString,
-// ) string {
-// 	q := url.Values{}
-// 	q.Set("response_type", "code")
-// 	q.Set("client_id", clientID)
-// 	q.Set("redirect_uri", redirectURI)
-// 	q.Set("scope", joinScopes(scopes))
-// 	q.Set("state", state)
-
-// 	if force {
-// 		q.Set("approval_prompt", "force")
-// 	}
-
-// 	return fmt.Sprintf("%s%s?%s", OAuthBaseURL, oauthAuthorizationRequestSlug, q.Encode())
-// }
-
-// func joinScopes(scopes []ScopeString) string {
-// 	stringScopes := make([]string, len(scopes))
-// 	for i, scope := range scopes {
-// 		stringScopes[i] = string(scope)
-// 	}
-
-// 	return strings.Join(stringScopes, ",")
-// }
+	return strings.Join(stringScopes, ",")
+}

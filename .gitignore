@@ -5,4 +5,3 @@ front-end
 sample_response
 cmd/
 main/
-strava_test.go
