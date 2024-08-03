@@ -1,119 +1,223 @@
 package gostrava
 
-import "net/http"
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+)
 
-// BaseURLv3 is the base URL for the Strava API v3.
-const BaseURLv3 = "https://www.strava.com/api/v3"
+const defaultBaseURL string = "https://www.strava.com/"
 
-// Strava represents the main client for interacting with the Strava API.
-type Strava struct {
-	oauth      OAuth
-	client *stravaHTTPClient
+var errBadResponse = errors.New("got a bad response. check response object")
+
+type service struct {
+	client *Client
 }
 
-// New creates a new instance of the Strava client with default settings.
-//
-// It initializes a new Strava client with the default HTTP client.
-//
-// Returns:
-// - *Strava: A new instance of the Strava client.
-func New() *Strava {
-	stravaHTTPClient := &stravaHTTPClient{
-		httpClient: http.DefaultClient,
+type Client struct {
+	clientID     string
+	clientSecret string
+
+	BaseURL *url.URL
+	client  *http.Client
+
+	common service // Use a single service struct instead of allocating one for each service on the heap.
+
+	OAuth2 OAuthService
+}
+
+// NewClient creates a new Client instance with the given HTTP client. If no HTTP client is provided,
+// the default HTTP client is used.
+func NewClient(httpClient *http.Client) *Client {
+	if httpClient == nil {
+		httpClient = &http.Client{}
 	}
-	return &Strava{
-		client: stravaHTTPClient,
+	c := &Client{client: httpClient}
+	c.initialize()
+	return c
+}
+
+func (c *Client) initialize() {
+	if c.client == nil {
+		c.client = http.DefaultClient
 	}
+	if c.BaseURL == nil {
+		c.BaseURL, _ = url.Parse(defaultBaseURL)
+	}
+
+	c.common = service{client: c}
+
+	c.OAuth2 = OAuthService{service: c.common}
 }
 
-// SetCredentials updates the OAuth client ID and client secret for the Strava client.
+// SetCredentials configures the client ID, client secret, and optionally scopes for OAuth2.
+func (s *Client) SetCredentials(clientID, clientSecret string) *Client {
+	s.clientID = clientID
+	s.clientSecret = clientSecret
+	return s
+}
+
+// RequestOption is a function that modifies an HTTP request.
+type RequestOption func(req *http.Request) error
+
+// NewRequest creates an API request. A relative URL can be provided in urlStr,
+// in which case it is resolved relative to the BaseURL of the Client.
 //
-// This method sets the client ID and client secret used for authenticating
-// and authorizing the client with the OAuth2 server.
+// The function handles different types of request bodies:
+// - If the body is nil, no body is attached to the request (useful for GET requests).
+// - If the body is of type url.Values, it is encoded as `application/x-www-form-urlencoded`.
+// - If the body is a string, it is treated as raw JSON and the content type is set to `application/json`.
+// - For other types (e.g., structs), the body is marshaled to JSON, and the content type is set to `application/json`.
 //
 // Parameters:
-// - clientID: The OAuth client ID provided by the authorization server.
-// - clientSecret: The OAuth client secret provided by the authorization server.
-func (c *Strava) SetCredentials(clientID string, clientSecret string) {
-	c.oauth.clientID = clientID
-	c.oauth.clientSecret = clientSecret
-}
-
-// ClientID retrieves the current client ID used by the OAuth2 client.
-//
-// This method returns the client ID that has been set for the OAuth2 client.
-// It allows you to access the client ID that is currently in use.
+// - method: The HTTP method to use for the request (e.g., "GET", "POST").
+// - urlStr: A relative URL to be resolved against the client's BaseURL.
+// - body: The request body. Can be nil, url.Values, a JSON string, or any type that can be marshaled to JSON.
+// - opts: Variadic arguments representing request options to further configure the request.
 //
 // Returns:
-// - string: A string representing the OAuth2 client's client ID.
-func (c *Strava) ClientID() string {
-	return c.oauth.clientID
+// - An *http.Request representing the created request.
+// - An error if there is a problem creating the request or setting its properties.
+func (c *Client) NewRequest(method, urlStr string, body interface{}, opts ...RequestOption) (*http.Request, error) {
+	// Ensure BaseURL ends with a trailing slash
+	if c.BaseURL == nil {
+		return nil, fmt.Errorf("BaseURL is not set")
+	}
+	if !strings.HasSuffix(c.BaseURL.Path, "/") {
+		c.BaseURL.Path += "/"
+	}
+
+	// Determine if urlStr is an absolute URL
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing URL: %v", err)
+	}
+
+	var fullURL *url.URL
+	if parsedURL.IsAbs() {
+		// If the provided URL is absolute, use it directly
+		fullURL = parsedURL
+	} else {
+		// Otherwise, resolve it relative to the BaseURL
+		fullURL, err = c.BaseURL.Parse(urlStr)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing relative URL: %v", err)
+		}
+	}
+
+	var (
+		contentType string
+		buf         io.Reader
+	)
+
+	if body != nil {
+		switch v := body.(type) {
+		case url.Values:
+			// Handle form data
+			contentType = "application/x-www-form-urlencoded"
+			buf = strings.NewReader(v.Encode())
+		case string:
+			// Handle JSON body, expecting the body to be a JSON string
+			contentType = "application/json"
+			buf = strings.NewReader(v)
+		default:
+			// Handle struct and other types
+			contentType = "application/json"
+			data, err := json.Marshal(body)
+			if err != nil {
+				return nil, err
+			}
+			buf = bytes.NewReader(data)
+		}
+	}
+
+	// Create the HTTP request
+	req, err := http.NewRequest(method, fullURL.String(), buf)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the Content-Type header if needed
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+
+	req.Header.Set("Accept", "application/json")
+
+	// Apply request options
+	for _, opt := range opts {
+		if err := opt(req); err != nil {
+			return nil, err
+		}
+	}
+
+	return req, nil
 }
 
-// ClientSecret retrieves the client secret used by the OAuth2 client.
-//
-// This method returns the client secret that has been set for the OAuth2 client.
-// It allows you to access the client secret that is currently in use.
-//
-// Returns:
-// - string: A string representing the OAuth2 client's client secret.
-func (c *Strava) ClientSecret() string {
-	return c.oauth.clientSecret
+// Do executes the given HTTP request using the client's HTTP client and returns the HTTP response.
+func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, error) {
+	if ctx == nil {
+		return nil, errors.New("context must not be nil")
+	}
+
+	req = req.WithContext(ctx)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		if ctx.Err() != nil {
+			// If the context was cancelled, return the context's error.
+			return nil, ctx.Err()
+		}
+		return nil, err
+	}
+
+	return resp, nil
 }
 
-// SetScopes sets the scopes for the OAuth2 client.
-//
-// This method configures the scopes that define the level of access requested
-// by the OAuth2 client.
-//
-// Parameters:
-// - scopes: A slice of scopes that define the level of access requested.
-func (c *Strava) SetScopes(scopes []Scope) {
-	c.oauth.scopes = scopes
-}
+// DoAndParse executes the HTTP request and decodes the response into the given variable.
+// It handles error responses and successful responses.
+func (c *Client) DoAndParse(ctx context.Context, req *http.Request, v interface{}) (*http.Response, error) {
+	resp, err := c.Do(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-// Scopes retrieves the current scopes set for the OAuth2 client.
-//
-// This method returns the scopes that have been set for the OAuth2 client,
-// which define the level of access requested.
-//
-// Returns:
-// - []Scope: A slice of scopes that define the level of access requested.
-func (c *Strava) Scopes() []Scope {
-	return c.oauth.scopes
-}
+	// Handle response based on status code
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		f := new(Fault)
+		decodeErr := json.NewDecoder(resp.Body).Decode(f)
+		if decodeErr == io.EOF {
+			return resp, errBadResponse
+		}
+		if decodeErr != nil {
+			return resp, fmt.Errorf("error decoding JSON response: %w", decodeErr)
+		}
+		return resp, f
+	}
 
-// UseCustomHTTPClient sets a custom HTTP client for the Strava client.
-//
-// This allows you to provide a custom `http.Client` with specific configurations,
-// such as timeouts, transport settings, or proxies, instead of using the default
-// HTTP client. This is useful when you need to control the behavior of HTTP requests
-// made by the Strava client.
-//
-// Parameters:
-// - client (*http.Client): The custom HTTP client to be used for making HTTP requests.
-func (c *Strava) UseCustomHTTPClient(client HTTPClient) {
-	c.client.httpClient = client
-}
+	// Handle successful response
+	switch v := v.(type) {
+	case nil:
+		// Do nothing if v is nil
+	case io.Writer:
+		_, err = io.Copy(v, resp.Body)
+	default:
+		decodeErr := json.NewDecoder(resp.Body).Decode(v)
+		if decodeErr == io.EOF {
+			// An empty response body is acceptable
+			decodeErr = nil
+		}
+		if decodeErr != nil {
+			return resp, fmt.Errorf("error decoding JSON response: %w", decodeErr)
+		}
+	}
 
-// CustomRequest sends an HTTP request based on the provided RequestOptions and returns the result.
-//
-// This method leverages the `NewRequest` method of the `stravaHTTPClient` instance associated
-// with the `Strava` struct to handle the request creation and execution. It provides a flexible
-// way to configure and execute HTTP requests, including specifying the HTTP method, URL, URL parameters,
-// request body, headers, content type, and context for request execution.
-//
-// Parameters:
-// - options (RequestOptions): Configuration for the HTTP request, including the HTTP method,
-//   URL, URL parameters, request body, headers, content type, and context. The `RequestOptions`
-//   struct should be used to specify all necessary settings for the request.
-// - responseData (interface{}): A pointer to a variable where the response data will be stored.
-//   This variable should be a pointer to a struct or slice that matches the expected response format.
-//   For non-JSON responses, use a pointer to a byte slice to capture raw response data.
-//
-// Returns:
-// - error: Returns an error if the request fails or if there are issues with the response. 
-//   If the request is successful and there are no errors, it returns nil.
-func (c *Strava) CustomRequest(options RequestOptions, responseData interface{}) error {
-	return c.client.NewRequest(options, responseData)
+	return resp, err
 }

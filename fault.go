@@ -13,7 +13,7 @@ type Error struct {
 	Resource string `json:"resource"` // The type of resource associated with his error.
 }
 
-func (e *Fault) Error() string {
-	err, _ := json.Marshal(e)
+func (f *Fault) Error() string {
+	err, _ := json.Marshal(f)
 	return string(err)
 }

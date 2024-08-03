@@ -1,171 +1,138 @@
 package gostrava
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
+	"context"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
+	"net/url"
 	"testing"
+	"time"
 )
 
-type MockHTTPClient struct {
-	DoFunc func(req *http.Request) (*http.Response, error)
-}
-
-func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	return m.DoFunc(req)
-}
-
-func TestStrava_New(t *testing.T) {
-	strava := New()
-	if strava == nil {
-		t.Fatalf("expected non-nil client")
-	}
-	if strava.client.httpClient == nil || strava.client.httpClient != http.DefaultClient {
-		t.Fatalf("expected default HTTP client")
-	}
-}
-
-func TestStrava_SetCredentials(t *testing.T) {
-	client := New()
-	client.SetCredentials("clientID", "clientSecret")
-
-	if client.ClientID() != "clientID" {
-		t.Errorf("expected clientID to be 'clientID', got '%s'", client.ClientID())
-	}
-	if client.ClientSecret() != "clientSecret" {
-		t.Errorf("expected clientSecret to be 'clientSecret', got '%s'", client.ClientSecret())
-	}
-}
-
-func TestStrava_SetScopes(t *testing.T) {
-	client := New()
-	scopes := []Scope{"read", "write"}
-	client.SetScopes(scopes)
-
-	if !reflect.DeepEqual(client.Scopes(), scopes) {
-		t.Errorf("expected scopes %v, got %v", scopes, client.Scopes())
-	}
-}
-
-func TestStrava_UseCustomHTTPClient(t *testing.T) {
-	client := New()
-	mockClient := &MockHTTPClient{
-		DoFunc: func(req *http.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte(`{"key":"value"}`))),
-			}, nil
-		},
-	}
-	client.UseCustomHTTPClient(mockClient)
-
-	options := RequestOptions{
-		Method: http.MethodGet,
-		URL:    "https://www.example.com",
-	}
-
-	var responseData []byte
-	err := client.CustomRequest(options, &responseData)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
-func TestStrava_CustomRequest_Success(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+func TestDoAndParseSuccess(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		response := map[string]string{"key": "value"}
-		json.NewEncoder(w).Encode(response)
-	}
-	server := httptest.NewServer(http.HandlerFunc(handler))
+		w.Write([]byte(`{"message":"success"}`))
+	}))
 	defer server.Close()
 
-	client := &stravaHTTPClient{
-		httpClient: server.Client(),
-	}
+	client := NewClient(nil)
+	client.BaseURL, _ = url.Parse(server.URL)
 
-	var responseData map[string]string
-	options := RequestOptions{
-		Method: http.MethodGet,
-		URL:    server.URL,
-	}
+	req, _ := client.NewRequest(http.MethodGet, "", nil)
 
-	err := client.NewRequest(options, &responseData)
+	var result map[string]string
+	_, err := client.DoAndParse(context.Background(), req, &result)
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("DoAndParse() error = %v", err)
 	}
-
-	expected := map[string]string{"key": "value"}
-	if !reflect.DeepEqual(responseData, expected) {
-		t.Errorf("expected %v, got %v", expected, responseData)
+	if result["message"] != "success" {
+		t.Errorf("DoAndParse() result = %v, want %v", result["message"], "success")
 	}
 }
 
-func TestStrava_CustomRequest_Error(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
-		errorResponse := Fault{
-			Errors: []Error{
-				Error{Code: "test_code", Field: "test_field", Resource: "test_resource"},
-				
-			},
-		}
-		json.NewEncoder(w).Encode(errorResponse)
-	}
-	server := httptest.NewServer(http.HandlerFunc(handler))
+func TestDoAndParseErrorResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"errors":null,"message":"internal server error"}`))
+	}))
 	defer server.Close()
 
-	client := &stravaHTTPClient{
-		httpClient: server.Client(),
-	}
+	client := NewClient(nil)
+	client.BaseURL, _ = url.Parse(server.URL)
 
-	var responseData map[string]string
-	options := RequestOptions{
-		Method: http.MethodGet,
-		URL:    server.URL,
-	}
-
-	err := client.NewRequest(options, &responseData)
+	req, _ := client.NewRequest(http.MethodGet, "/", nil)
+	var result map[string]string
+	_, err := client.DoAndParse(context.Background(), req, &result)
 	if err == nil {
-		t.Fatal("expected error, got nil")
+		t.Fatal("DoAndParse() expected an error but got none")
 	}
 
-	expectedError := `status_code: 400, {"errors":[{"code":"test_code","field":"test_field","resource":"test_resource"}],"message":""}`
-	if err.Error() != expectedError {
-		t.Errorf("expected %v, got %v", expectedError, err)
+	fault, ok := err.(*Fault)
+	if !ok {
+		t.Fatalf("DoAndParse() error = %v, want type *Fault", err)
+	}
+	if fault.Error() != `{"errors":null,"message":"internal server error"}` {
+		t.Errorf("DoAndParse() fault error = %v, want %v", fault.Error(), `{"errors":null,"message":"internal server error"}`)
 	}
 }
 
-func TestStrava_CustomRequest_NonJSONResponse(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
+func TestDoAndParseEmptyResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("plain text response"))
-	}
-	server := httptest.NewServer(http.HandlerFunc(handler))
+	}))
 	defer server.Close()
 
-	client := &stravaHTTPClient{
-		httpClient: server.Client(),
-	}
+	client := NewClient(nil)
+	client.BaseURL, _ = url.Parse(server.URL)
 
-	var responseData []byte
-	options := RequestOptions{
-		Method: http.MethodGet,
-		URL:    server.URL,
-	}
-
-	err := client.NewRequest(options, &responseData)
+	req, _ := client.NewRequest("GET", "/", nil)
+	var result map[string]interface{}
+	_, err := client.DoAndParse(context.Background(), req, &result)
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("DoAndParse() error = %v", err)
+	}
+	if len(result) != 0 {
+		t.Errorf("DoAndParse() result = %v, want empty map", result)
+	}
+}
+
+func TestDoAndParseInvalidJSON(t *testing.T) {
+	// Create a test server that returns malformed JSON
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message":"success"`)) // Malformed JSON
+	}))
+	defer server.Close()
+
+	// Create a new client and set the base URL to the test server's URL
+	client := NewClient(nil)
+	client.BaseURL, _ = url.Parse(server.URL)
+
+	// Create a new request
+	req, err := client.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatalf("error creating request: %v", err)
 	}
 
-	expected := []byte("plain text response")
-	if !bytes.Equal(responseData, expected) {
-		t.Errorf("expected %s, got %s", expected, responseData)
+	// Define a variable to hold the decoded response
+	var result map[string]string
+
+	// Execute the request and decode the response
+	_, err = client.DoAndParse(context.Background(), req, &result)
+	if err == nil {
+		t.Fatal("DoAndParse() expected an error but got none")
+	}
+}
+
+func TestDoAndParseContextCancelled(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Simulate a long response
+		select {
+		case <-r.Context().Done():
+			return
+		case <-time.After(time.Second):
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message":"success"}`))
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(nil)
+	client.BaseURL, _ = url.Parse(server.URL)
+
+	req, _ := client.NewRequest(http.MethodGet, "/", nil)
+
+	// Create a context that will be cancelled immediately
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := client.DoAndParse(ctx, req, nil)
+	if err == nil {
+		t.Fatal("DoAndParse() expected an error due to cancelled context but got none")
+	}
+	if err != context.Canceled {
+		t.Errorf("DoAndParse() error = %v, want %v", err, context.Canceled)
 	}
 }
