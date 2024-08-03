@@ -1,7 +1,3 @@
-module github.com/guisaez/gostrava
-
-retract v1.3.0
-
-retract v1.2.0
+module github.com/guisaez/gostrava/v2
 
 go 1.22.2
