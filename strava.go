@@ -20,6 +20,11 @@ type service struct {
 	client *Client
 }
 
+type ListOptions struct {
+	Page    int `url:"page,omitempty"`
+	PerPage int `url:"per_page,omitempty"`
+}
+
 type Client struct {
 	clientID     string
 	clientSecret string
@@ -65,6 +70,13 @@ func (s *Client) SetCredentials(clientID, clientSecret string) *Client {
 
 // RequestOption is a function that modifies an HTTP request.
 type RequestOption func(req *http.Request) error
+
+func SetAuthorizationHeader(accessToken string) RequestOption {
+	return func(req *http.Request) error {
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		return nil
+	}
+}
 
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
 // in which case it is resolved relative to the BaseURL of the Client.

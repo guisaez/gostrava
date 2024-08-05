@@ -32,8 +32,7 @@ const (
 // OAuthService provides methods for interacting with Strava's OAuth2 API.
 type OAuthService struct {
 	service
-
-	scopes       []Scope
+	scopes []Scope
 }
 
 // SetScopes configures the scopes for OAuth2. Defaults to "read" if no scopes are provided.
@@ -134,8 +133,8 @@ func BuildTokenRevocationURL(baseURL, clientID, clientSecret, accessToken string
 	return fmt.Sprintf("%s%s?%s", baseURL, tokenRevokeEndpoint, q.Encode())
 }
 
-// TokenExchangeResponse represents the response from exchanging an authorization code for an access token.
-type TokenExchangeResponse struct {
+// AuthorizationResponse represents the response from exchanging an authorization code for an access token.
+type AuthorizationResponse struct {
 	AccessToken  string      `json:"access_token"`  // The access token to be used for authenticated API requests.
 	RefreshToken string      `json:"refresh_token"` // The refresh token to obtain a new access token when the current one expires.
 	ExpiresAt    int64       `json:"expires_at"`    // Unix timestamp indicating when the access token expires.
@@ -146,7 +145,7 @@ type TokenExchangeResponse struct {
 }
 
 // ExchangeAuthorizationCode exchanges an authorization code for an access token.
-func (s *OAuthService) ExchangeAuthorizationCode(context context.Context, code string, scopes ...Scope) (*TokenExchangeResponse, *http.Response, error) {
+func (s *OAuthService) ExchangeAuthorizationCode(context context.Context, code string, scopes ...Scope) (*AuthorizationResponse, *http.Response, error) {
 	tokenExchangeURL := s.TokenExchangeURL(code)
 
 	req, err := s.client.NewRequest(http.MethodPost, tokenExchangeURL, nil, func(req *http.Request) error {
@@ -157,7 +156,7 @@ func (s *OAuthService) ExchangeAuthorizationCode(context context.Context, code s
 		return nil, nil, err
 	}
 
-	tokenResponse := new(TokenExchangeResponse)
+	tokenResponse := new(AuthorizationResponse)
 
 	resp, err := s.client.DoAndParse(context, req, tokenResponse)
 	if err != nil {
@@ -171,10 +170,10 @@ func (s *OAuthService) ExchangeAuthorizationCode(context context.Context, code s
 
 // RefreshTokenResponse represents the response from refreshing an access token.
 type RefreshTokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresAt    int64  `json:"expires_at"`
-	ExpiresIn    int64  `json:"expires_in"`
+	AccessToken  string `json:"access_token"`  // The access token to be used for authenticated API requests.
+	RefreshToken string `json:"refresh_token"` // The refresh token to obtain a new access token when the current one expires.
+	ExpiresAt    int64  `json:"expires_at"`    // Unix timestamp indicating when the access token expires.
+	ExpiresIn    int64  `json:"expires_in"`    // Duration in seconds from the time of the response until the access token expires.
 }
 
 // RefreshToken refreshes an expired access token using a refresh token.
