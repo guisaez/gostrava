@@ -36,6 +36,7 @@ type Client struct {
 
 	OAuth2     OAuthService
 	Activities ActivityService
+	Athletes   AthletesService
 }
 
 // NewClient creates a new Client instance with the given HTTP client. If no HTTP client is provided,
@@ -70,6 +71,7 @@ func (c *Client) initialize() {
 
 	c.OAuth2 = OAuthService{service: c.common}
 	c.Activities = ActivityService(c.common)
+	c.Athletes = AthletesService(c.common)
 }
 
 // RequestOption is a function that modifies an HTTP request.
