@@ -14,7 +14,7 @@ func TestGenerateAuthorizationURL(t *testing.T) {
 	client.SetCredentials("test-client-id", "test-client-secret")
 
 	service := &OAuthService{
-		service:      service{client: client},
+		service: service{client: client},
 	}
 
 	redirectURI := "https://example.com/callback"
@@ -24,8 +24,8 @@ func TestGenerateAuthorizationURL(t *testing.T) {
 	}
 	scopes := []Scope{Read, ActivityWrite}
 
-	expectedURL := BuildAuthorizationURL(service.client.BaseURL.String(), service.client.clientID, redirectURI, scopes, options)
-	authURL := service.AuthorizationURL(redirectURI, options, scopes...)
+	expectedURL := BuildAuthorizationURL(service.client.BaseURL.String(), service.client.clientID, service.client.clientSecret, redirectURI, scopes, options)
+	authURL := service.AuthorizationURL(redirectURI, options, scopes)
 
 	if authURL != expectedURL {
 		t.Errorf("AuthorizationURL() = %v, want %v", authURL, expectedURL)
@@ -54,7 +54,7 @@ func TestTokenRevocationURL(t *testing.T) {
 	client.SetCredentials("test-client-id", "test-client-secret")
 
 	service := &OAuthService{
-		service:      service{client: client},
+		service: service{client: client},
 	}
 
 	accessToken := "test-access-token"
@@ -96,11 +96,11 @@ func TestExchangeAuthorizationCode(t *testing.T) {
 	client.SetCredentials("test-client-id", "test-client-secret")
 
 	service := &OAuthService{
-		service:      service{client: client},
+		service: service{client: client},
 	}
 
 	code := "test-auth-code"
-	resp, httpResp, err := service.ExchangeAuthorizationCode(context.Background(), code)
+	resp, httpResp, err := service.ExchangeAuthorizationCode(context.Background(), code, nil)
 	if err != nil {
 		t.Fatalf("ExchangeAuthorizationCode() error = %v", err)
 	}
@@ -131,7 +131,7 @@ func TestRefreshToken(t *testing.T) {
 	client.SetCredentials("test-client-id", "test-client-secret")
 
 	service := &OAuthService{
-		service:      service{client: client},
+		service: service{client: client},
 	}
 
 	refreshToken := "test-refresh-token"

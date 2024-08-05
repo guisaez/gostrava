@@ -50,20 +50,21 @@ type OAuthFlowOptions struct {
 }
 
 // AuthorizationURL creates the URL to redirect users to Strava's authorization page.
-func (s *OAuthService) AuthorizationURL(redirectURI string, options OAuthFlowOptions, scopes ...Scope) string {
+func (s *OAuthService) AuthorizationURL(redirectURI string, options OAuthFlowOptions, scopes []Scope) string {
 	if len(scopes) == 0 {
-		return BuildAuthorizationURL(s.client.BaseURL.String(), s.client.clientID, redirectURI, s.scopes, options)
+		return BuildAuthorizationURL(s.client.BaseURL.String(), s.client.clientID, s.client.clientSecret, redirectURI, s.scopes, options)
 	}
-	return BuildAuthorizationURL(s.client.BaseURL.String(), s.client.clientID, redirectURI, scopes, options)
+	return BuildAuthorizationURL(s.client.BaseURL.String(), s.client.clientID, s.client.clientSecret, redirectURI, scopes, options)
 }
 
 // BuildAuthorizationURL constructs the URL for initiating the OAuth2 flow.
 func BuildAuthorizationURL(
-	baseURL, clientID, redirectURI string, scopes []Scope, options OAuthFlowOptions,
+	baseURL, clientID, clientSecret, redirectURI string, scopes []Scope, options OAuthFlowOptions,
 ) string {
 	q := url.Values{}
 	q.Set("response_type", "code")
 	q.Set("client_id", clientID)
+	q.Set("client_secret", clientSecret)
 	q.Set("redirect_uri", redirectURI)
 	q.Set("scope", joinScopes(scopes))
 	if options.State != "" {
@@ -145,7 +146,7 @@ type AuthorizationResponse struct {
 }
 
 // ExchangeAuthorizationCode exchanges an authorization code for an access token.
-func (s *OAuthService) ExchangeAuthorizationCode(context context.Context, code string, scopes ...Scope) (*AuthorizationResponse, *http.Response, error) {
+func (s *OAuthService) ExchangeAuthorizationCode(context context.Context, code string, scopes []Scope) (*AuthorizationResponse, *http.Response, error) {
 	tokenExchangeURL := s.TokenExchangeURL(code)
 
 	req, err := s.client.NewRequest(http.MethodPost, tokenExchangeURL, nil, func(req *http.Request) error {

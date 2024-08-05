@@ -34,7 +34,8 @@ type Client struct {
 
 	common service // Use a single service struct instead of allocating one for each service on the heap.
 
-	OAuth2 OAuthService
+	OAuth2     OAuthService
+	Activities ActivityService
 }
 
 // NewClient creates a new Client instance with the given HTTP client. If no HTTP client is provided,
@@ -48,6 +49,15 @@ func NewClient(httpClient *http.Client) *Client {
 	return c
 }
 
+// SetCredentials configures the client ID, client secret, and optionally scopes for OAuth2.
+func (s *Client) SetCredentials(clientID, clientSecret string, scopes ...Scope) *Client {
+	s.clientID = clientID
+	s.clientSecret = clientSecret
+
+	s.OAuth2.scopes = scopes
+	return s
+}
+
 func (c *Client) initialize() {
 	if c.client == nil {
 		c.client = http.DefaultClient
@@ -59,13 +69,7 @@ func (c *Client) initialize() {
 	c.common = service{client: c}
 
 	c.OAuth2 = OAuthService{service: c.common}
-}
-
-// SetCredentials configures the client ID, client secret, and optionally scopes for OAuth2.
-func (s *Client) SetCredentials(clientID, clientSecret string) *Client {
-	s.clientID = clientID
-	s.clientSecret = clientSecret
-	return s
+	c.Activities = ActivityService(c.common)
 }
 
 // RequestOption is a function that modifies an HTTP request.
@@ -131,9 +135,13 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}, opts ...Req
 	if body != nil {
 		switch v := body.(type) {
 		case url.Values:
-			// Handle form data
-			contentType = "application/x-www-form-urlencoded"
-			buf = strings.NewReader(v.Encode())
+			if method == http.MethodGet {
+				fullURL.RawQuery = v.Encode()
+			} else {
+				// Handle form data
+				contentType = "application/x-www-form-urlencoded"
+				buf = strings.NewReader(v.Encode())
+			}
 		case string:
 			// Handle JSON body, expecting the body to be a JSON string
 			contentType = "application/json"

@@ -1,5 +1,26 @@
 package gostrava
 
+type StreamType string
+
+var StreamTypes = struct {
+	All            StreamType
+	Time           StreamType
+	Distance       StreamType
+	LatLng         StreamType
+	Altitude       StreamType
+	VelocitySmooth StreamType
+	HeartRate      StreamType
+	Cadence        StreamType
+	Watts          StreamType
+	Temperature    StreamType
+	Moving         StreamType
+	GradeSmooth    StreamType
+}{
+	"time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temperature,moving,grade_smooth",
+	"time", "distance", "latlng", "altitude", "velocity_smooth",
+	"heartrate", "cadence", "watts", "temperature", "moving", "grade_smooth",
+}
+
 type Stream struct {
 	Type string        `json:"type"`
 	Data []interface{} `json:"data"`

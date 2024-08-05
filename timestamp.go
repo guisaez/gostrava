@@ -24,3 +24,9 @@ func (t *TimeStamp) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+// MarshalJSON converts a TimeStamp into a JSON string in RFC3339 format.
+func (t TimeStamp) MarshalJSON() ([]byte, error) {
+	timeStr := time.Time(t)
+	return json.Marshal(timeStr)
+}
