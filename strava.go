@@ -21,8 +21,8 @@ type service struct {
 }
 
 type ListOptions struct {
-	Page    int `url:"page,omitempty"`
-	PerPage int `url:"per_page,omitempty"`
+	Page    int `url:"page,omitempty"`     // Defaults to 1
+	PerPage int `url:"per_page,omitempty"` // Defaults to 30
 }
 
 type Client struct {
