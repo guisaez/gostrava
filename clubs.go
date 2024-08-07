@@ -74,7 +74,7 @@ func (s *ClubService) GetById(ctx context.Context, accessToken string, id int) (
 	return club, resp, nil
 }
 
-// ListClubAdminstrators retrives the list of administrators for a given club.
+// ListClubAdministrators retrieves the list of administrators for a given club.
 //
 // Even though an administrator is represented as a AthleteSummary as it is mentioned
 // in the docs, the API only returns the first_name and last_name of the athlete.

@@ -1,9 +1,14 @@
 package gostrava
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 )
+
+// *************** Types ********************
 
 type RouteSummary struct {
 	Athlete             *AthleteSummary  `json:"athlete"`               // An instance of AthleteSummary.
@@ -100,4 +105,70 @@ func (rt *RouteType) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+// *************** Methods********************
+
+type RoutesService service
+
+const routes string = "/api/v3/routes"
+
+// GetById retrieves a route by its id. Requires read_all scope for private routes.
+//
+// GET: https://www.strava.com/api/v3/routes{id}
+func (s *RoutesService) GetById(ctx context.Context, accessToken string, id int) (*RouteDetailed, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d", routes, id)
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, nil, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	route := new(RouteDetailed)
+	resp, err := s.client.DoAndParse(ctx, req, route)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return route, resp, nil
+}
+
+// ExportRouteGPX returns a GPX binary of the route. Required read_all scope for private routes.
+//
+// GET: https://www.strava.com/api/v3/routes/{id}/export_gpx
+func (s *RoutesService) ExportRouteGPX(ctx context.Context, accessToken string, id int) ([]byte, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d/export_gpx", routes, id)
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, nil, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	gpx := []byte{}
+	resp, err := s.client.DoAndParse(ctx, req, &gpx)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return gpx, resp, nil
+}
+
+// ExportRouteTCX returns a TCX file of the route. Required read_all scope for private routes.
+//
+// GET: https://www.strava.com/api/v3/routes/{id}/export_tcx
+func (s *RoutesService) ExportRouteTCX(ctx context.Context, accessToken string, id int) ([]byte, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d/export_tcx", routes, id)
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, nil, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tcx := []byte{}
+	resp, err := s.client.DoAndParse(ctx, req, &tcx)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return tcx, resp, nil
 }
