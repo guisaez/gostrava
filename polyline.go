@@ -1,12 +1,12 @@
 package gostrava
 
-type PolylineSummmary struct {
+type PolylineSummary struct {
 	ID              string `json:"id"`
 	SummaryPolyline string `json:"summary_polyline"`
 	ResourceState   int8   `json:"resource_state"`
 }
 
 type PolylineDetailed struct {
-	PolylineSummmary
+	PolylineSummary
 	Polyline string `json:"polyline"`
 }

@@ -39,6 +39,7 @@ type Client struct {
 	Athletes       *AthletesService
 	CurrentAthlete *CurrentAthleteService
 	Clubs          *ClubService
+	Routes         *RoutesService
 }
 
 // NewClient creates a new Client instance with the given HTTP client. If no HTTP client is provided,
@@ -76,6 +77,7 @@ func (c *Client) initialize() {
 	c.Athletes = (*AthletesService)(&c.common)
 	c.CurrentAthlete = (*CurrentAthleteService)(&c.common)
 	c.Clubs = (*ClubService)(&c.common)
+	c.Routes = (*RoutesService)(&c.common)
 }
 
 // RequestOption is a function that modifies an HTTP request.

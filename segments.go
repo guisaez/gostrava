@@ -31,7 +31,7 @@ type SegmentDetailed struct {
 	ElevationProfile  string `json:"elevation_profile"`
 	ElevationProfiles URL    `json:"elevation_profiles"`
 
-	Map          *PolylineSummmary `json:"map,omitempty"`          // An instance of PolylineMap.
+	Map          *PolylineSummary `json:"map,omitempty"`          // An instance of PolylineMap.
 	EffortCount  int               `json:"effort_count"`           // The total number of efforts for this segment
 	AthleteCount int               `json:"athlete_count"`          // The number of unique athletes who have an effort for this segment
 	StarCount    int               `json:"star_count"`             // The number of stars for this segment

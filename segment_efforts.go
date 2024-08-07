@@ -1,5 +1,13 @@
 package gostrava
 
+import (
+	"context"
+	"fmt"
+	"net/http"
+)
+
+// ***************Types ********************
+
 type SegmentEffortSummary struct {
 	ID             int       `json:"id"`               // The unique identifier of this effort
 	ActivityID     int       `json:"activity_id"`      // The unique identifier of the activity related to this effort
@@ -27,3 +35,31 @@ type SegmentEffortDetailed struct {
 	PRRank       *int            `json:"pr_rank,omitempty"`           // The rank of the effort on the athlete's leaderboard if it belongs in the top 3 at the time of upload
 	Hidden       *bool           `json:"hidden,omitempty"`            // Whether this effort should be hidden when viewed within an activity
 }
+
+// *************** Methods ********************
+
+type SegmentEffortService service
+
+const segmentEfforts string = "/api/v3/segment_efforts"
+
+// Returns a segment effort from an activity that is owned by the authenticated athlete. 
+//
+// GET: https://www.strava.com/api/v3/segment_efforts/{id}
+func (s *SegmentEffortService) GetById(ctx context.Context, accessToken string, id int) (*SegmentEffortDetailed, *http.Response, error) {
+	
+	urlStr := fmt.Sprintf("%s/%d", segmentEfforts, id)
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, nil, SetAuthorizationHeader(accessToken))
+	if err != nil{
+		return nil, nil, err
+	}
+
+	segmentEffort := new(SegmentEffortDetailed)
+	resp, err := s.client.DoAndParse(ctx, req, segmentEffort)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return segmentEffort, resp, err
+}
+

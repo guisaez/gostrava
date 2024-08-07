@@ -74,6 +74,33 @@ func (s *ClubService) GetById(ctx context.Context, accessToken string, id int) (
 	return club, resp, nil
 }
 
+// ListClubActivities retrieves the list of activities for a given club.
+//
+// Even though an administrator is represented as a AthleteSummary as it is mentioned
+// in the docs, the API only returns the first_name and last_name of the athlete.
+//
+// GET https://www.strava.com/api/v3/clubs/{id}/activities
+func (s *ClubService) ListClubActivities(ctx context.Context, accessToken string, id int, options *ListOptions) ([]ActivitySummary, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d/activities", clubs, id)
+
+	q, err := query.Values(options)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, q, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var activities []ActivitySummary
+	resp, err := s.client.DoAndParse(ctx, req, &activities)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return activities, resp, nil
+}
+
 // ListClubAdministrators retrieves the list of administrators for a given club.
 //
 // Even though an administrator is represented as a AthleteSummary as it is mentioned

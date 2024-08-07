@@ -17,7 +17,7 @@ type RouteSummary struct {
 	ElevationGain       float32          `json:"elevation_gain"`        // The route's elevation gain.
 	ID                  int              `json:"id"`                    // The unique identifier of this route
 	IdStr               string           `json:"id_str"`                // The unique identifier of the route in string format
-	Map                 PolylineSummmary `json:"map"`                   // An instance of PolylineMap.
+	Map                 PolylineSummary `json:"map"`                   // An instance of PolylineMap.
 	MapUrls             URL              `json:"map_urls"`              //
 	Name                string           `json:"name"`                  // The name of this route
 	Private             bool             `json:"private"`               // Whether this route is private
@@ -131,6 +131,27 @@ func (s *RoutesService) GetById(ctx context.Context, accessToken string, id int)
 	}
 
 	return route, resp, nil
+}
+
+// GetRouteStreams returns the corresponding route streams.
+// Requires read_all scope for private routes.
+//
+// GET: https://www.strava.com/api/v3/routes/{id}/streams
+func (s *RoutesService) GetRouteStreams(ctx context.Context, accessToken string, id int) ([]Stream, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d/streams", routes, id)
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, nil, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var streams []Stream
+	resp, err := s.client.DoAndParse(ctx, req, &streams)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return streams, resp, nil
 }
 
 // ExportRouteGPX returns a GPX binary of the route. Required read_all scope for private routes.

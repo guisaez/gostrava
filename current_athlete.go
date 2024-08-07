@@ -64,7 +64,7 @@ const athlete = "/api/v3/athlete"
 
 // GetAthlete retrieves the athlete that corresponds to the provided accessToken.
 // Tokes with profile_read:all scope will receive a detailed athlete representation
-// all others will recevie a SummaryAthlete representation
+// all others will receive a SummaryAthlete representation
 //
 // GET https://www.strava.com/api/v3/athlete
 func (s *CurrentAthleteService) GetAthlete(ctx context.Context, accessToken string) (*AthleteDetailed, *http.Response, error) {
@@ -84,7 +84,7 @@ func (s *CurrentAthleteService) GetAthlete(ctx context.Context, accessToken stri
 	return athlete, resp, err
 }
 
-// GetAthleteZones retreives the athlete's heartrate and power zones.
+// GetAthleteZones retrieves the athlete's heartrate and power zones.
 // Required profile_read:all
 //
 // GET https://www.strava.com/api/v3/athlete/zones

@@ -43,7 +43,7 @@ type ActivitySummary struct {
 	CommentCount               int               `json:"comment_count"`     // The number of comments for this activity
 	AthleteCount               int               `json:"athlete_count"`     // The number of athletes for taking part in a group activity
 	PhotoCount                 int               `json:"photo_count"`       // The number of Instagram photos for this activity
-	Map                        *PolylineSummmary `json:"map"`               // An instance of PolylineSummary.
+	Map                        *PolylineSummary `json:"map"`               // An instance of PolylineSummary.
 	Trainer                    bool              `json:"trainer"`           // Whether this activity was recorded on a training machine
 	Commute                    bool              `json:"commute"`           // Whether this activity is a commute
 	Private                    bool              `json:"private"`           // Whether this activity is private
