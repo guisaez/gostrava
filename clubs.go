@@ -1,5 +1,15 @@
 package gostrava
 
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/google/go-querystring/query"
+)
+
+// *************** Types ********************
+
 type ClubMeta struct {
 	ID            int    `json:"id"`             // The club's unique identifier.
 	Name          string `json:"name"`           // The club's name.
@@ -36,4 +46,84 @@ type ClubDetailed struct {
 	Type           string `json:"club_type"`
 	FollowingCount int    `json:"following_count"` // The number of athletes in the club that the logged-in athlete follows.
 	Website        string `json:"website"`
+}
+
+// *************** Methods ********************
+
+type ClubService service
+
+const clubs = "/v3/api/clubs"
+
+// GetById retrieves a club by its id.
+//
+// GET https://www.strava/com/api/v3/clubs/{id}
+func (s *ClubService) GetById(ctx context.Context, accessToken string, id int) (*ClubDetailed, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d", clubs, id)
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, nil, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	club := new(ClubDetailed)
+	resp, err := s.client.DoAndParse(ctx, req, club)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return club, resp, nil
+}
+
+// ListClubAdminstrators retrives the list of administrators for a given club.
+//
+// Even though an administrator is represented as a AthleteSummary as it is mentioned
+// in the docs, the API only returns the first_name and last_name of the athlete.
+//
+// GET https://www.strava.com/api/v3/clubs/{id}/admins
+func (s *ClubService) ListClubAdministrators(ctx context.Context, accessToken string, id int, options *ListOptions) ([]AthleteSummary, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d/admins", clubs, id)
+
+	q, err := query.Values(options)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, q, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var admins []AthleteSummary
+	resp, err := s.client.DoAndParse(ctx, req, &admins)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return admins, resp, nil
+}
+
+// ListClubMembers retrives the list of administrators for a given club.
+//
+// Even though a member is represented as a AthleteSummary as it is mentioned
+// in the docs, the API only returns the first_name and last_name of the athlete.
+//
+// GET https://www.strava.com/api/v3/clubs/{id}/members
+func (s *ClubService) ListClubMembers(ctx context.Context, accessToken string, id int, options *ListOptions) ([]AthleteSummary, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d/admins", clubs, id)
+
+	q, err := query.Values(options)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, q, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var members []AthleteSummary
+	resp, err := s.client.DoAndParse(ctx, req, &members)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return members, resp, nil
 }
