@@ -451,7 +451,7 @@ func (s *ActivityService) ListActivityComments(ctx context.Context, accessToken 
 }
 
 // ListActivityKudoers retrieves the athletes who kudoed a given activity.
-// Requires activity:read scope for Everyone and Followes activities
+// Requires activity:read scope for Everyone and Followers activities
 // Required activity:read_all scope for Only Me activities
 //
 // GET: https://www.strava.com/api/v3/activities/{id}/kudos
