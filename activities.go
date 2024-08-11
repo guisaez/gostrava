@@ -479,7 +479,7 @@ func (s *ActivityService) ListActivityKudoers(ctx context.Context, accessToken s
 
 // GetActivityStreamTypes retrieves the activity's streams.
 // Requires activity:read scope. Required activity:read_all scope for Only Me activities.
-// By default return the primary stream of the activity.
+// By default returns the primary stream of the activity.
 func (s *ActivityService) GetActivityStreams(ctx context.Context, accessToken string, id int, streamTypes []StreamType) ([]Stream, *http.Response, error) {
 	urlStr := fmt.Sprintf("%s/%d/streams", activitiesPath, id)
 
@@ -503,4 +503,36 @@ func (s *ActivityService) GetActivityStreams(ctx context.Context, accessToken st
 		return nil, resp, err
 	}
 	return streams, resp, nil
+}
+
+type ListActivityOptions struct {
+	Page    int   `url:"page,omitempty"`     // Defaults to 1
+	PerPage int   `url:"per_page,omitempty"` // Defaults to 30
+	Before  int64 `url:"before,omitempty"`   // An epoch timestamp to use for filtering activities that have taken place before that certain time.
+	After   int64 `url:"after,omitempty"`    // An epoch timestamp to use for filtering activities that have taken place after a certain time.
+}
+
+// ListAthleteActivities retrieves a list of the activities recorded by the authenticated athlete
+//
+// GET https://www.strava.com/api/v3/athlete/activities
+func (s *ActivityService) ListAthleteActivities(ctx context.Context, accessToken string, options *ListActivityOptions) ([]ActivitySummary, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/activities", athlete)
+
+	q, err := query.Values(options)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, q, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var activities []ActivitySummary
+	resp, err := s.client.DoAndParse(ctx, req, &activities)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return activities, resp, err
 }

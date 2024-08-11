@@ -4,6 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/google/go-querystring/query"
 )
 
 // ***************Types ********************
@@ -42,15 +48,14 @@ type SegmentEffortService service
 
 const segmentEfforts string = "/api/v3/segment_efforts"
 
-// Returns a segment effort from an activity that is owned by the authenticated athlete. 
+// Returns a segment effort from an activity that is owned by the authenticated athlete.
 //
 // GET: https://www.strava.com/api/v3/segment_efforts/{id}
 func (s *SegmentEffortService) GetById(ctx context.Context, accessToken string, id int) (*SegmentEffortDetailed, *http.Response, error) {
-	
 	urlStr := fmt.Sprintf("%s/%d", segmentEfforts, id)
 
 	req, err := s.client.NewRequest(http.MethodGet, urlStr, nil, SetAuthorizationHeader(accessToken))
-	if err != nil{
+	if err != nil {
 		return nil, nil, err
 	}
 
@@ -63,3 +68,64 @@ func (s *SegmentEffortService) GetById(ctx context.Context, accessToken string, 
 	return segmentEffort, resp, err
 }
 
+// GetSegmentEffortStreams returns a set of streams for a segment effort completed by the authenticated athlete.
+// Requires read_all scope. // By default returns the primary stream of the of the segment effort.
+//
+// GET https://www.strava.com/api/v3/segment_efforts/{id}/streams
+func (s *SegmentEffortService) GetSegmentEffortStreams(ctx context.Context, accessToken string, id int, streamTypes []StreamType) ([]Stream, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d/stream", segmentEfforts, id)
+
+	v := url.Values{}
+
+	typesSlice := make([]string, len(streamTypes))
+	for i, v := range streamTypes {
+		typesSlice[i] = string(v)
+	}
+	v.Add("keys", strings.Join(typesSlice, ","))
+	v.Add("keys_by_type", "true")
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, v, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var streams []Stream
+	resp, err := s.client.DoAndParse(ctx, req, &streams)
+	if err != nil {
+		return nil, resp, err
+	}
+	return streams, resp, nil
+}
+
+type ListSegmentEffortOptions struct {
+	Page           int       `url:"page,omitempty"`
+	PerPage        int       `url:"per_page,omitempty"`
+	StartDateLocal time.Time `url:"start_date_local,omitempty"`
+	EndDateLocal   time.Time `url:"end_date_local,omitempty"`
+}
+
+// ListSegmentEfforts returns a set containing the corresponding athlete's segment efforts for a given segment.
+//
+//	GET: https://www.strava.com/api/v3/segment_efforts
+func (s *SegmentEffortService) ListSegmentEfforts(ctx context.Context, accessToken string, segmentId int, options *ListSegmentEffortOptions) ([]SegmentEffortDetailed, *http.Response, error) {
+	urlStr := segmentEfforts
+
+	q, err := query.Values(options)
+	if err != nil {
+		return nil, nil, err
+	}
+	q.Add("segment_id", strconv.Itoa(segmentId))
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, q, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var segmentEfforts []SegmentEffortDetailed
+	resp, err := s.client.DoAndParse(ctx, req, &segmentEfforts)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return segmentEfforts, resp, nil
+}

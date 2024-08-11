@@ -154,3 +154,29 @@ func (s *ClubService) ListClubMembers(ctx context.Context, accessToken string, i
 
 	return members, resp, nil
 }
+
+// ListAthleteClubs retrieves a list of all the clubs the current athlete
+// is a member of.
+//
+// GET https://www.strava.com/api/v3/athlete/clubs
+func (s *ClubService) ListAthleteClubs(ctx context.Context, accessToken string, options *ListOptions) ([]ClubSummary, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/clubs", athlete)
+
+	q, err := query.Values(options)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, q, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var clubs []ClubSummary
+	resp, err := s.client.DoAndParse(ctx, req, &clubs)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return clubs, resp, err
+}
