@@ -1,5 +1,18 @@
 package gostrava
 
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+
+	"github.com/google/go-querystring/query"
+)
+
+// *************** Types ********************
+
 type SegmentSummary struct {
 	ID              int                     `json:"id"`                          // The unique identifier of this segment
 	ResourceState   int8                    `json:"resource_state"`              //
@@ -32,11 +45,11 @@ type SegmentDetailed struct {
 	ElevationProfiles URL    `json:"elevation_profiles"`
 
 	Map          *PolylineSummary `json:"map,omitempty"`          // An instance of PolylineMap.
-	EffortCount  int               `json:"effort_count"`           // The total number of efforts for this segment
-	AthleteCount int               `json:"athlete_count"`          // The number of unique athletes who have an effort for this segment
-	StarCount    int               `json:"star_count"`             // The number of stars for this segment
-	Xoms         *Xoms             `json:"xoms,omitempty"`         //
-	LocalLegend  *LocalLegend      `json:"local_legend,omitempty"` //
+	EffortCount  int              `json:"effort_count"`           // The total number of efforts for this segment
+	AthleteCount int              `json:"athlete_count"`          // The number of unique athletes who have an effort for this segment
+	StarCount    int              `json:"star_count"`             // The number of stars for this segment
+	Xoms         *Xoms            `json:"xoms,omitempty"`         //
+	LocalLegend  *LocalLegend     `json:"local_legend,omitempty"` //
 
 	// AthleteSegmentStats *SegmentSummaryEffort `json:"athlete_segment_stats,omitempty"` // An instance ofSegmentSummaryEffort.
 }
@@ -87,4 +100,152 @@ type ExplorerSegment struct {
 	Starred            bool    `json:"starred"`
 	ElevationProfile   string  `json:"elevation_profile"`
 	LocalLegendEnabled bool    `json:"local_legend_enabled"`
+}
+
+// *************** Methods ********************
+
+type SegmentService service
+
+const segments = "/api/v3/segments"
+
+// GetById returns the specified segment. Required read_all scope for private segments.
+func (s *SegmentService) GetById(ctx context.Context, accessToken string, id int) (*SegmentDetailed, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d", segments, id)
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, nil, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	segmentDetailed := new(SegmentDetailed)
+	resp, err := s.client.DoAndParse(ctx, req, segmentDetailed)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return segmentDetailed, resp, err
+}
+
+type Bounds struct {
+	SWLat float32
+	SWLng float32
+	NELat float32
+	NELng float32
+}
+
+func (b *Bounds) String() string {
+	return fmt.Sprintf("%2f,%2f,%2f,%2f", b.SWLat, b.SWLng, b.NELat, b.NELng)
+}
+
+type ExploreSegmentsOptions struct {
+	ActivityType string `url:"activity_type,omitempty"` // Desired activity type. May take one of the following values: running, riding.
+	MinCat       int    `url:"min_cat,omitempty"`       // The minimum climbing category
+	MaxCat       int    `url:"max_cat,omitempty"`       // The maximum climbing category
+}
+
+// ExploreSegments returns the top 10 segments matching the ExploreSegmentOptions within the provided Bounds.
+func (s *SegmentService) ExploreSegments(ctx context.Context, accessToken string, bounds Bounds, opts *ExploreSegmentsOptions) (*ExplorerResponse, *http.Response, error) {
+	urlStr := segments + "/explore"
+
+	q, err := query.Values(opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	q.Set("bounds", bounds.String())
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, q, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	explorerResp := new(ExplorerResponse)
+	resp, err := s.client.DoAndParse(ctx, req, explorerResp)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return explorerResp, resp, nil
+}
+
+// ListStarredSegments returns a list of the authenticated athlete's starred segments.
+// Private segments are filtered out unless requested by a token with read_all scope.
+func (s *SegmentService) ListStarredSegments(ctx context.Context, accessToken string, opts *ListOptions) ([]SegmentSummary, *http.Response, error) {
+	urlStr := segments
+
+	q, err := query.Values(opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, q, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	segmentSummary := []SegmentSummary{}
+	resp, err := s.client.DoAndParse(ctx, req, &segmentSummary)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return segmentSummary, resp, err
+}
+
+// StartSegment Stars/Unstars the given segment for the authenticated athlete.
+// Requires profile:write scope.
+func (s *SegmentService) StarSegment(ctx context.Context, accessToken string, id int, starred bool) (*SegmentDetailed, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d/starred", segments, id)
+
+	formData := url.Values{}
+	formData.Add("starred", strconv.FormatBool(starred))
+
+	req, err := s.client.NewRequest(http.MethodPut, urlStr, formData, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	segmentDetailed := new(SegmentDetailed)
+	resp, err := s.client.DoAndParse(ctx, req, segmentDetailed)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return segmentDetailed, resp, nil
+}
+
+type SegmentStreamType string
+
+var SegmentStreamTypes = struct {
+	Distance SegmentStreamType
+	LatLng   SegmentStreamType
+	Altitute SegmentStreamType
+}{"distance", "latlng", "altitude"}
+
+// Returns a set of streams for a segment completed by the authenticated athlete. Requires read_all scope.
+// It defaults to all (all the following Types):
+//   - distance, latlng, altitude
+func (s *SegmentService) GetSegmentStreams(ctx context.Context, accessToken string, id int, streamTypes ...SegmentStreamType) (*StreamSet, *http.Response, error) {
+	urlStr := fmt.Sprintf("%s/%d/stream", segments, id)
+
+	v := url.Values{}
+
+	typesSlice := make([]string, len(streamTypes))
+	for i, v := range streamTypes {
+		typesSlice[i] = string(v)
+	}
+	v.Add("keys", strings.Join(typesSlice, ","))
+	v.Add("keys_by_type", "true")
+
+	req, err := s.client.NewRequest(http.MethodGet, urlStr, v, SetAuthorizationHeader(accessToken))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	streams := new(StreamSet)
+	resp, err := s.client.DoAndParse(ctx, req, streams)
+	if err != nil {
+		return nil, resp, err
+	}
+	return streams, resp, nil
 }

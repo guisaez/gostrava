@@ -480,7 +480,7 @@ func (s *ActivityService) ListActivityKudoers(ctx context.Context, accessToken s
 // GetActivityStreamTypes retrieves the activity's streams.
 // Requires activity:read scope. Required activity:read_all scope for Only Me activities.
 // By default returns the primary stream of the activity.
-func (s *ActivityService) GetActivityStreams(ctx context.Context, accessToken string, id int, streamTypes []StreamType) ([]Stream, *http.Response, error) {
+func (s *ActivityService) GetActivityStreams(ctx context.Context, accessToken string, id int, streamTypes ...StreamType) ([]Stream, *http.Response, error) {
 	urlStr := fmt.Sprintf("%s/%d/streams", activitiesPath, id)
 
 	v := url.Values{}

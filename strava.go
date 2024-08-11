@@ -34,11 +34,12 @@ type Client struct {
 
 	common service // Use a single service struct instead of allocating one for each service on the heap.
 
-	OAuth2     *OAuthService
-	Activities *ActivityService
-	Athletes   *AthletesService
-	Clubs      *ClubService
-	Routes     *RoutesService
+	OAuth2         *OAuthService
+	Activities     *ActivityService
+	Athletes       *AthletesService
+	Clubs          *ClubService
+	Routes         *RoutesService
+	SegmentEfforts *SegmentEffortService
 }
 
 // NewClient creates a new Client instance with the given HTTP client. If no HTTP client is provided,
@@ -76,6 +77,7 @@ func (c *Client) initialize() {
 	c.Athletes = (*AthletesService)(&c.common)
 	c.Clubs = (*ClubService)(&c.common)
 	c.Routes = (*RoutesService)(&c.common)
+	c.SegmentEfforts = (*SegmentEffortService)(&c.common)
 }
 
 // RequestOption is a function that modifies an HTTP request.

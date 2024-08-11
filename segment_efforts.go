@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-// ***************Types ********************
+// *************** Types ********************
 
 type SegmentEffortSummary struct {
 	ID             int       `json:"id"`               // The unique identifier of this effort
@@ -72,7 +72,7 @@ func (s *SegmentEffortService) GetById(ctx context.Context, accessToken string, 
 // Requires read_all scope. // By default returns the primary stream of the of the segment effort.
 //
 // GET https://www.strava.com/api/v3/segment_efforts/{id}/streams
-func (s *SegmentEffortService) GetSegmentEffortStreams(ctx context.Context, accessToken string, id int, streamTypes []StreamType) ([]Stream, *http.Response, error) {
+func (s *SegmentEffortService) GetSegmentEffortStreams(ctx context.Context, accessToken string, id int, streamTypes ...StreamType) ([]Stream, *http.Response, error) {
 	urlStr := fmt.Sprintf("%s/%d/stream", segmentEfforts, id)
 
 	v := url.Values{}
