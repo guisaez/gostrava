@@ -219,7 +219,7 @@ type SegmentStreamType string
 var SegmentStreamTypes = struct {
 	Distance SegmentStreamType
 	LatLng   SegmentStreamType
-	Altitute SegmentStreamType
+	Altitude SegmentStreamType
 }{"distance", "latlng", "altitude"}
 
 // Returns a set of streams for a segment completed by the authenticated athlete. Requires read_all scope.
