@@ -32,15 +32,15 @@ const (
 // OAuthService provides methods for interacting with Strava's OAuth2 API.
 type OAuthService struct {
 	service
-	scopes []Scope
+	Scopes []Scope
 }
 
 // SetScopes configures the scopes for OAuth2. Defaults to "read" if no scopes are provided.
 func (s *OAuthService) SetScopes(scopes ...Scope) {
 	if len(scopes) == 0 {
-		s.scopes = []Scope{Read}
+		s.Scopes = []Scope{Read}
 	}
-	s.scopes = scopes
+	s.Scopes = scopes
 }
 
 // OAuthFlowOptions holds options for the OAuth2 flow.
@@ -50,9 +50,9 @@ type OAuthFlowOptions struct {
 }
 
 // AuthorizationURL creates the URL to redirect users to Strava's authorization page.
-func (s *OAuthService) AuthorizationURL(redirectURI string, options OAuthFlowOptions, scopes []Scope) string {
+func (s *OAuthService) AuthorizationURL(redirectURI string, options OAuthFlowOptions, scopes ...Scope) string {
 	if len(scopes) == 0 {
-		return BuildAuthorizationURL(s.client.BaseURL.String(), s.client.clientID, s.client.clientSecret, redirectURI, s.scopes, options)
+		return BuildAuthorizationURL(s.client.BaseURL.String(), s.client.clientID, s.client.clientSecret, redirectURI, s.Scopes, options)
 	}
 	return BuildAuthorizationURL(s.client.BaseURL.String(), s.client.clientID, s.client.clientSecret, redirectURI, scopes, options)
 }
@@ -120,7 +120,7 @@ func BuildTokenRefreshURL(baseURL, clientID, clientSecret, refreshToken string) 
 
 // TokenRevocationURL creates the URL for revoking an access token.
 func (s *OAuthService) TokenRevocationURL(accessToken string) string {
-	return BuildTokenRevocationURL(s.client.BaseURL.String(), s.client.clientID, s.client.clientSecret, accessToken)
+	return BuildTokenRevocationURL(s.client.BaseURL.String(),s.client.clientID , s.client.clientSecret, accessToken)
 }
 
 // BuildTokenRevocationURL constructs the URL for revoking an access token.
@@ -131,6 +131,7 @@ func BuildTokenRevocationURL(baseURL, clientID, clientSecret, accessToken string
 	if !strings.HasSuffix(baseURL, "/") {
 		baseURL += "/"
 	}
+
 	return fmt.Sprintf("%s%s?%s", baseURL, tokenRevokeEndpoint, q.Encode())
 }
 

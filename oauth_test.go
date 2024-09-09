@@ -25,7 +25,7 @@ func TestGenerateAuthorizationURL(t *testing.T) {
 	scopes := []Scope{Read, ActivityWrite}
 
 	expectedURL := BuildAuthorizationURL(service.client.BaseURL.String(), service.client.clientID, service.client.clientSecret, redirectURI, scopes, options)
-	authURL := service.AuthorizationURL(redirectURI, options, scopes)
+	authURL := service.AuthorizationURL(redirectURI, options, scopes...)
 
 	if authURL != expectedURL {
 		t.Errorf("AuthorizationURL() = %v, want %v", authURL, expectedURL)
@@ -47,11 +47,7 @@ func TestBuildTokenRevocationURL(t *testing.T) {
 }
 
 func TestTokenRevocationURL(t *testing.T) {
-	client := &Client{
-		BaseURL: mustParseURL("https://www.strava.com"),
-	}
-
-	client.SetCredentials("test-client-id", "test-client-secret")
+	client := NewClient(nil).SetCredentials("test-client-id", "test-client-secret")
 
 	service := &OAuthService{
 		service: service{client: client},
@@ -91,9 +87,8 @@ func TestExchangeAuthorizationCode(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(nil)
+	client := NewClient(nil).SetCredentials("test-client-id", "test-client-secret")
 	client.BaseURL, _ = url.Parse(server.URL)
-	client.SetCredentials("test-client-id", "test-client-secret")
 
 	service := &OAuthService{
 		service: service{client: client},
@@ -128,7 +123,7 @@ func TestRefreshToken(t *testing.T) {
 
 	client := NewClient(nil)
 	client.BaseURL, _ = url.Parse(server.URL)
-	client.SetCredentials("test-client-id", "test-client-secret")
+	client = client.SetCredentials("test-client-id", "test-client-secret")
 
 	service := &OAuthService{
 		service: service{client: client},
@@ -177,12 +172,4 @@ func TestDeauthorizeToken(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("RevokeToken() StatusCode = %v, want %v", resp.StatusCode, http.StatusOK)
 	}
-}
-
-func mustParseURL(rawURL string) *url.URL {
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		panic(err)
-	}
-	return parsedURL
 }

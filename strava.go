@@ -38,8 +38,11 @@ type Client struct {
 	Activities     *ActivityService
 	Athletes       *AthletesService
 	Clubs          *ClubService
+	Gears          *GearService
 	Routes         *RoutesService
+	Segments      *SegmentService
 	SegmentEfforts *SegmentEffortService
+	Uploads        *UploadService
 }
 
 // NewClient creates a new Client instance with the given HTTP client. If no HTTP client is provided,
@@ -58,7 +61,7 @@ func (s *Client) SetCredentials(clientID, clientSecret string, scopes ...Scope) 
 	s.clientID = clientID
 	s.clientSecret = clientSecret
 
-	s.OAuth2.scopes = scopes
+	s.OAuth2.Scopes = scopes
 	return s
 }
 
@@ -77,7 +80,10 @@ func (c *Client) initialize() {
 	c.Athletes = (*AthletesService)(&c.common)
 	c.Clubs = (*ClubService)(&c.common)
 	c.Routes = (*RoutesService)(&c.common)
+	c.Segments = (*SegmentService)(&c.common)
 	c.SegmentEfforts = (*SegmentEffortService)(&c.common)
+	c.Uploads = (*UploadService)(&c.common)
+	c.Gears = (*GearService)(&c.common)
 }
 
 // RequestOption is a function that modifies an HTTP request.
@@ -165,6 +171,7 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}, opts ...Req
 		}
 	}
 
+	
 	// Create the HTTP request
 	req, err := http.NewRequest(method, fullURL.String(), buf)
 	if err != nil {
@@ -217,10 +224,17 @@ func (c *Client) DoAndParse(ctx context.Context, req *http.Request, v interface{
 	}
 	defer resp.Body.Close()
 
+	var bodyCopy bytes.Buffer
+	tee := io.TeeReader(resp.Body, &bodyCopy)
+
+	body, err := io.ReadAll(tee)
+	fmt.Println(bodyCopy.String())
+
+
 	// Handle response based on status code
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
 		f := new(Fault)
-		decodeErr := json.NewDecoder(resp.Body).Decode(f)
+		decodeErr := json.NewDecoder(bytes.NewReader(body)).Decode(f)
 		if decodeErr == io.EOF {
 			return resp, errBadResponse
 		}
@@ -230,6 +244,7 @@ func (c *Client) DoAndParse(ctx context.Context, req *http.Request, v interface{
 		return resp, f
 	}
 
+	
 	// Handle successful response
 	switch v := v.(type) {
 	case nil:
@@ -237,7 +252,7 @@ func (c *Client) DoAndParse(ctx context.Context, req *http.Request, v interface{
 	case io.Writer:
 		_, err = io.Copy(v, resp.Body)
 	default:
-		decodeErr := json.NewDecoder(resp.Body).Decode(v)
+		decodeErr := json.NewDecoder(bytes.NewReader(body)).Decode(v)
 		if decodeErr == io.EOF {
 			// An empty response body is acceptable
 			decodeErr = nil

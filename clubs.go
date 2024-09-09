@@ -32,7 +32,7 @@ type ClubSummary struct {
 	Country            string         `json:"country"`              // The club's country.
 	Private            bool           `json:"private"`              // Whether the club is private.
 	MemberCount        int            `json:"member_count"`         // The club's member count.
-	Featured           bool           `json:"featured,omitempty"`   // Whether the club is featured or not.
+	Featured           bool           `json:"featured"`             // Whether the club is featured or not.
 	Verified           bool           `json:"verified"`             // Whether the club is verified or not.
 	URL                string         `json:"url"`                  // The club's vanity URL.
 }
@@ -48,11 +48,23 @@ type ClubDetailed struct {
 	Website        string `json:"website"`
 }
 
+type ClubActivity struct {
+	ResourceState      int8           `json:"resource_state"` // Resource state, indicates level of detail. Possible values: 1 (Meta), 2 (Summary), 3 (Detailed)
+	Athlete            AthleteSummary `json:"athlete"`
+	Name               string         `json:"name"`
+	Distance           float32        `json:"distance"`
+	MovingTime         int            `json:"moving_time"`
+	ElapsedTime        int            `json:"elapsed_time"`
+	TotalElevationGain float32        `json:"total_elevation_gain"`
+	Type               ActivityType   `json:"type"`
+	SportType          SportType      `json:"sport_type"`
+}
+
 // *************** Methods ********************
 
 type ClubService service
 
-const clubs = "/v3/api/clubs"
+const clubs = "/api/v3/clubs"
 
 // GetById retrieves a club by its id.
 //
@@ -80,7 +92,7 @@ func (s *ClubService) GetById(ctx context.Context, accessToken string, id int) (
 // in the docs, the API only returns the first_name and last_name of the athlete.
 //
 // GET https://www.strava.com/api/v3/clubs/{id}/activities
-func (s *ClubService) ListClubActivities(ctx context.Context, accessToken string, id int, options *ListOptions) ([]ActivitySummary, *http.Response, error) {
+func (s *ClubService) ListClubActivities(ctx context.Context, accessToken string, id int, options *ListOptions) ([]ClubActivity, *http.Response, error) {
 	urlStr := fmt.Sprintf("%s/%d/activities", clubs, id)
 
 	q, err := query.Values(options)
@@ -92,7 +104,7 @@ func (s *ClubService) ListClubActivities(ctx context.Context, accessToken string
 		return nil, nil, err
 	}
 
-	var activities []ActivitySummary
+	var activities []ClubActivity
 	resp, err := s.client.DoAndParse(ctx, req, &activities)
 	if err != nil {
 		return nil, resp, err
@@ -128,14 +140,14 @@ func (s *ClubService) ListClubAdministrators(ctx context.Context, accessToken st
 	return admins, resp, nil
 }
 
-// ListClubMembers retrives the list of administrators for a given club.
+// ListClubMembers retrieves the list of administrators for a given club.
 //
 // Even though a member is represented as a AthleteSummary as it is mentioned
 // in the docs, the API only returns the first_name and last_name of the athlete.
 //
 // GET https://www.strava.com/api/v3/clubs/{id}/members
 func (s *ClubService) ListClubMembers(ctx context.Context, accessToken string, id int, options *ListOptions) ([]AthleteSummary, *http.Response, error) {
-	urlStr := fmt.Sprintf("%s/%d/admins", clubs, id)
+	urlStr := fmt.Sprintf("%s/%d/members", clubs, id)
 
 	q, err := query.Values(options)
 	if err != nil {
