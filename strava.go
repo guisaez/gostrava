@@ -40,7 +40,7 @@ type Client struct {
 	Clubs          *ClubService
 	Gears          *GearService
 	Routes         *RoutesService
-	Segments      *SegmentService
+	Segments       *SegmentService
 	SegmentEfforts *SegmentEffortService
 	Uploads        *UploadService
 }
@@ -171,7 +171,6 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}, opts ...Req
 		}
 	}
 
-	
 	// Create the HTTP request
 	req, err := http.NewRequest(method, fullURL.String(), buf)
 	if err != nil {
@@ -224,17 +223,10 @@ func (c *Client) DoAndParse(ctx context.Context, req *http.Request, v interface{
 	}
 	defer resp.Body.Close()
 
-	var bodyCopy bytes.Buffer
-	tee := io.TeeReader(resp.Body, &bodyCopy)
-
-	body, err := io.ReadAll(tee)
-	fmt.Println(bodyCopy.String())
-
-
 	// Handle response based on status code
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
 		f := new(Fault)
-		decodeErr := json.NewDecoder(bytes.NewReader(body)).Decode(f)
+		decodeErr := json.NewDecoder(resp.Body).Decode(f)
 		if decodeErr == io.EOF {
 			return resp, errBadResponse
 		}
@@ -244,15 +236,24 @@ func (c *Client) DoAndParse(ctx context.Context, req *http.Request, v interface{
 		return resp, f
 	}
 
-	
 	// Handle successful response
 	switch v := v.(type) {
 	case nil:
 		// Do nothing if v is nil
-	case io.Writer:
-		_, err = io.Copy(v, resp.Body)
+	case *[]byte:
+		if v == nil {
+			return resp, fmt.Errorf("nil pointer passed for []byte")
+		}
+		// Resize the slice to match the body size
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return resp, fmt.Errorf("error reading response body")
+		}
+		*v = make([]byte, len(b))
+		copy(*v, b)
+		return resp, nil
 	default:
-		decodeErr := json.NewDecoder(bytes.NewReader(body)).Decode(v)
+		decodeErr := json.NewDecoder(resp.Body).Decode(v)
 		if decodeErr == io.EOF {
 			// An empty response body is acceptable
 			decodeErr = nil
