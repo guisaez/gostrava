@@ -34,12 +34,10 @@ func TestGenerateAuthorizationURL(t *testing.T) {
 
 func TestBuildTokenRevocationURL(t *testing.T) {
 	baseURL := "https://www.strava.com"
-	clientID := "test-client-id"
-	clientSecret := "test-client-secret"
 	accessToken := "test-access-token"
 	expectedURL := "https://www.strava.com/oauth/deauthorize?access_token=test-access-token"
 
-	resultURL := BuildTokenRevocationURL(baseURL, clientID, clientSecret, accessToken)
+	resultURL := BuildTokenRevocationURL(baseURL,  accessToken)
 
 	if resultURL != expectedURL {
 		t.Errorf("BuildTokenRevocationURL() = %v, want %v", resultURL, expectedURL)

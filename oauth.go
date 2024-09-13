@@ -120,11 +120,11 @@ func BuildTokenRefreshURL(baseURL, clientID, clientSecret, refreshToken string) 
 
 // TokenRevocationURL creates the URL for revoking an access token.
 func (s *OAuthService) TokenRevocationURL(accessToken string) string {
-	return BuildTokenRevocationURL(s.client.BaseURL.String(),s.client.clientID , s.client.clientSecret, accessToken)
+	return BuildTokenRevocationURL(s.client.BaseURL.String(), accessToken)
 }
 
 // BuildTokenRevocationURL constructs the URL for revoking an access token.
-func BuildTokenRevocationURL(baseURL, clientID, clientSecret, accessToken string) string {
+func BuildTokenRevocationURL(baseURL, accessToken string) string {
 	q := url.Values{}
 	q.Set("access_token", accessToken)
 
