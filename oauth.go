@@ -212,6 +212,45 @@ func (s *OAuthService) RevokeToken(context context.Context, accessToken string) 
 	return s.client.Do(context, req)
 }
 
+type OAuthError struct {
+	Message string
+}
+type AuthorizationOpts struct {
+	Context context.Context
+}
+
+func (s *OAuthService) AuthorizationHandleFunc(onSuccess func(auth *AuthorizationResponse),
+	onError func(onError error), opts *AuthorizationOpts,
+) func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			query := r.URL.Query()
+
+			errParam := query.Get("error")
+
+			if errParam == "" {
+				onError(&OAuthError{Message: errParam}, w, r)
+				return
+			}
+
+			code := query.Get("code")
+			scopes := query.Get("scope")
+
+			ctx := context.Background()
+			if opts != nil && opts.Context == nil {
+				ctx = opts.Context
+			}
+
+			auth, _, err := s.ExchangeAuthorizationCode(ctx, code, splitScopes(scopes))
+			if err != nil {
+				onError(err)
+			}
+
+			onSuccess(auth)
+		}
+	}
+}
+
 // --------- Helper ---------
 
 // joinScopes joins multiple scopes into a single comma-separated string.
@@ -221,4 +260,13 @@ func joinScopes(scopes []Scope) string {
 		stringScopes[i] = string(scope)
 	}
 	return strings.Join(stringScopes, ",")
+}
+
+func splitScopes(scopes string) []Scope {
+	splittedScopes := strings.Split(scopes, ",")
+	parsedScopes := make([]Scope, len(splittedScopes))
+	for i, scope := range splittedScopes {
+		parsedScopes[i] = Scope(scope)
+	}
+	return parsedScopes
 }
