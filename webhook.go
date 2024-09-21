@@ -10,13 +10,11 @@ import (
 )
 
 const (
-	subscriptionEndpoint string = "push_subscription"
+	subscriptionEndpoint string = "/api/v3/push_subscriptions"
 )
 
 // SubscriptionService provides methods for creating, viewing and deleting webhook subscription.
-type SubscriptionService struct {
-	service
-}
+type SubscriptionService service
 
 type Subscription struct {
 	ID int `json:"id"` // Subscription ID
@@ -25,6 +23,7 @@ type Subscription struct {
 func (s *SubscriptionService) Subscribe(ctx context.Context, callbackURL, verifyToken string) (*Subscription, *http.Response, error) {
 	subscriptionURL := s.SubscriptionRequestURL(callbackURL, verifyToken)
 
+	fmt.Println(subscriptionURL)
 	req, err := s.client.NewRequest(http.MethodPost, subscriptionURL, nil, func(req *http.Request) error {
 		req.URL, _ = url.Parse(subscriptionURL)
 		return nil
@@ -66,26 +65,41 @@ type subscriptionValidationResponse struct {
 	Challenge string `json:"hub.challenge"` // Random string the callback address must echo back to verify its existence.
 }
 
-func SubscriptionValidationHandler(verifyToken string) func(w http.ResponseWriter, r *http.Request) {
+// SubscriptionValidationHandler validates the subscription request using a token
+// provided by the caller and responds with the appropriate challenge.
+func SubscriptionValidationHandler(verifyToken string) http.HandlerFunc {
+	// Return an HTTP handler function
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Extract query parameters from the URL
 		q := r.URL.Query()
 
+		// Get the "hub.mode", "hub.challenge", and "hub.verify_token" from the query parameters
 		mode := q.Get("hub.mode")
 		challenge := q.Get("hub.challenge")
 		incomingVerifyToken := q.Get("hub.verify_token")
 
+		// Validate that the provided verify_token matches the expected one
 		if verifyToken != incomingVerifyToken {
+			// If tokens don't match, return a 401 Unauthorized response
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
+		// Check if the mode is "subscribe" as expected for a subscription request
 		if mode != "subscribe" {
+			// If the mode is not "subscribe", return a 400 Bad Request response
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		json, _ := json.Marshal(subscriptionValidationResponse{Challenge: challenge})
+		// If the verification and mode checks pass, respond with the challenge token
+		response := subscriptionValidationResponse{Challenge: challenge}
 
+		// Write a 200 OK status to indicate success
 		w.WriteHeader(http.StatusOK)
-		w.Write(json)
+
+		// Send the challenge response as JSON back to the client
+		json.NewEncoder(w).Encode(response)
 	}
 }
 

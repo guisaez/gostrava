@@ -388,7 +388,7 @@ func (s *ActivityService) ListActivityLaps(ctx context.Context, accessToken stri
 }
 
 // GetActivityZones retrieves the zones of a given activity
-// Requires actvity:read scope for Everyone and Followers activities
+// Requires activity:read scope for Everyone and Followers activities
 // Required activity:read_all for OnlyMe activities
 //
 // GET: https://www.strava.com/api/v3/activities/{id}/zones
@@ -417,9 +417,9 @@ type ListCommentOptions struct {
 	AfterCursor string `url:"after_cursor,omitempty"` // Cursor of the last item in the previous page of results, used to request the subsequent page of results. When omitted, the first page of results is fetched.
 }
 
-// ListActivityComments retrives the comments of a given activity.
+// ListActivityComments retrieves the comments of a given activity.
 // Requires activity:read for Everyone and Followers activities.
-// Requires actvity:read_all for Only Me activities.
+// Requires activity:read_all for Only Me activities.
 //
 // GET: https://www.strava.com/api/v3/activities/{id}/comments
 func (s *ActivityService) ListActivityComments(ctx context.Context, accessToken string, id int, opts *ListCommentOptions) ([]Comment, *http.Response, error) {

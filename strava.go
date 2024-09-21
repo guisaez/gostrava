@@ -43,6 +43,7 @@ type Client struct {
 	Segments       *SegmentService
 	SegmentEfforts *SegmentEffortService
 	Uploads        *UploadService
+	Webhook        *SubscriptionService
 }
 
 // NewClient creates a new Client instance with the given HTTP client. If no HTTP client is provided,
@@ -84,6 +85,7 @@ func (c *Client) initialize() {
 	c.SegmentEfforts = (*SegmentEffortService)(&c.common)
 	c.Uploads = (*UploadService)(&c.common)
 	c.Gears = (*GearService)(&c.common)
+	c.Webhook = (*SubscriptionService)(&c.common)
 }
 
 // RequestOption is a function that modifies an HTTP request.
